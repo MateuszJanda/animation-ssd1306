@@ -20,6 +20,17 @@ fn main() -> ! {
     let dp = arduino_hal::Peripherals::take().unwrap();
     let pins = arduino_hal::pins!(dp);
 
+    // let mut pins = arduino_uno::Pins::new(dp.PORTB, dp.PORTC, dp.PORTD);
+    // let mut serial = arduino_uno::Serial::new(
+    //     dp.USART0,
+    //     pins.d0,
+    //     pins.d1.into_output(&mut pins.ddr),
+    //     57600.into_baudrate(),
+    // );
+
+    let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
+    ufmt::uwriteln!(&mut serial, "BUKA").unwrap();
+
     // Create SPI interface.
     let (spi, cs_pin) = arduino_hal::Spi::new(
         dp.SPI,
@@ -42,6 +53,8 @@ fn main() -> ! {
 
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
+
+    display.set_pixel(19, 19, true);
 
     let style = PrimitiveStyleBuilder::new()
         .stroke_width(1)
