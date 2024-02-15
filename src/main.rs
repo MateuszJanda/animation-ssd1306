@@ -9,7 +9,7 @@ use arduino_hal::Delay;
 use embedded_graphics::{
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{Circle, PrimitiveStyleBuilder, Rectangle, Triangle},
+    primitives::{PrimitiveStyleBuilder, Rectangle},
 };
 
 use panic_halt as _;
@@ -21,7 +21,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     // Create SPI interface.
-    let (mut spi, _) = arduino_hal::Spi::new(
+    let (spi, cs_pin) = arduino_hal::Spi::new(
         dp.SPI,
         pins.d13.into_output(),
         pins.d11.into_output(),
@@ -31,17 +31,15 @@ fn main() -> ! {
     );
 
     // let mut led = pins.d13.into_output();
-    let mut dc_pin = pins.d7.into_output();
-    // let mut cs_pin = pins.d7.into_output();
+    let dc_pin = pins.d7.into_output();
+    let mut rst_pin = pins.d8.into_output();
+    let mut delay = Delay::new();
 
-    let interface = SPIInterfaceNoCS::new(spi, dc_pin);
-    // let interface = SPIInterface::new(spi, dc_pin, cs_pin);
+    // let interface = SPIInterfaceNoCS::new(spi, dc_pin);
+    let interface = SPIInterface::new(spi, dc_pin, cs_pin);
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
-    let mut rst_pin = pins.d8.into_output();
-
-    let mut delay = Delay::new();
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
 
@@ -50,13 +48,13 @@ fn main() -> ! {
         .stroke_color(BinaryColor::On)
         .build();
 
-    // screen outline
-    // default display size is 128x64 if you don't pass a _DisplaySize_
-    // enum to the _Builder_ struct
-    Rectangle::new(Point::new(0, 0), Size::new(127, 63))
+    let yoffset = 20;
+    Rectangle::new(Point::new(52, yoffset), Size::new_equal(16))
         .into_styled(style)
         .draw(&mut display)
         .unwrap();
+
+    display.flush().unwrap();
 
     loop {
         // led.toggle();
