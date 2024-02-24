@@ -1,14 +1,32 @@
 #!/usr/bin/env python3
 
 import subprocess
+import cv2
+import numpy as np
+
+
+GIF_NAME = "skull.gif"
+RESIZE_FACTOR = 0.5
 
 
 def main() -> None:
-    gif_name = "skull.gif"
-    output = subprocess.run(
-        ["ffmpeg", "-r", "1", "-i", f"{gif_name}", "-r", " 1", r"%04d.bmp"],
-        stdout=subprocess.PIPE,
-    )
+    # output = subprocess.run(
+    #     ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"%04d.bmp"],
+    #     stdout=subprocess.PIPE,
+    # )
+
+    image = cv2.imread("0001.bmp")
+    print(f"Height x Width x Channels: {image.shape}, dtype: {image.dtype}")
+
+    small_image = cv2.resize(image, (0, 0), fx=RESIZE_FACTOR, fy=RESIZE_FACTOR)
+    crop_image = small_image[15:79, :]
+
+    margin_image = np.zeros((64, 14, 3), dtype=image.dtype)
+    output_image = np.hstack((margin_image, crop_image))
+    output_image = np.hstack((output_image, margin_image))
+
+    cv2.imshow("image_window", output_image)
+    cv2.waitKey(0)
 
 
 if __name__ == "__main__":
