@@ -1,8 +1,14 @@
 #![no_std]
 #![no_main]
 
+use core::fmt::Write;
+
+use arduino_hal::hal::port::PB0;
+use arduino_hal::port::mode;
+use arduino_hal::port::Pin;
 use arduino_hal::spi;
 use arduino_hal::Delay;
+
 // use embedded_hal::blocking::delay::DelayMs ;
 // use embedded_hal::blocking::delay::Delay ;
 
@@ -31,6 +37,12 @@ fn main() -> ! {
     let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
     ufmt::uwriteln!(&mut serial, "BUKA").unwrap();
 
+    let settings = spi::Settings {
+        data_order: spi::DataOrder::MostSignificantFirst,
+        clock: spi::SerialClockRate::OscfOver4,
+        mode: embedded_hal::spi::MODE_3,
+    };
+
     // Create SPI interface.
     let (spi, cs_pin) = arduino_hal::Spi::new(
         dp.SPI,
@@ -38,7 +50,7 @@ fn main() -> ! {
         pins.d11.into_output(),
         pins.d12.into_pull_up_input(),
         pins.d10.into_output(),
-        spi::Settings::default(),
+        settings,
     );
 
     // let mut led = pins.d13.into_output();
@@ -51,10 +63,35 @@ fn main() -> ! {
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
-    display.reset(&mut rst_pin, &mut delay).unwrap();
-    display.init().unwrap();
+    // let mut display =
+    //     Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_terminal_mode();
 
-    display.set_pixel(19, 19, true);
+    display.reset(&mut rst_pin, &mut delay).unwrap();
+    arduino_hal::delay_ms(100);
+    // reset(&mut rst_pin);
+    // init_reg(&mut display);
+
+    // #define SSD1306_DISPLAYOFF 0xAE
+    // display.interface.send_commands(0xAE).unwrap();
+
+    display.init().unwrap();
+    // let _ = display.clear();
+
+    // display.write_str("asdf");
+    /* Endless loop */
+    // loop {
+    //     for c in 97..123 {
+    //         let _ = display.write_str(unsafe { core::str::from_utf8_unchecked(&[c]) });
+    //     }
+    //     for c in 65..91 {
+    //         let _ = display.write_str(unsafe { core::str::from_utf8_unchecked(&[c]) });
+    //     }
+    // }
+
+    // display.init().unwrap();
+    // display.clear(BinaryColor::On).unwrap();
+
+    // display.set_pixel(19, 19, true);
 
     let style = PrimitiveStyleBuilder::new()
         .stroke_width(1)
@@ -71,6 +108,16 @@ fn main() -> ! {
 
     loop {
         // led.toggle();
-        // arduino_hal::delay_ms(250);
+        arduino_hal::delay_ms(500);
+        ufmt::uwriteln!(&mut serial, "Ping").unwrap();
     }
 }
+
+// fn reset(rst: &mut Pin<mode::Output, PB0>) {
+//     rst.set_high();
+//     arduino_hal::delay_ms(100);
+//     rst.set_low();
+//     arduino_hal::delay_ms(100);
+//     rst.set_high();
+//     arduino_hal::delay_ms(100);
+// }
