@@ -8,7 +8,9 @@ Alternative naming conventions for SPI:
 - **SS** : nCS, CS, CSB, CSN, nSS, STE, SYNC.
 
 # Setup
-To run enter the command:
+
+To compile and run automatically on Arduino enter:
+
 ```bash
-$ cargo run
+$ cargo run --release
 ```
