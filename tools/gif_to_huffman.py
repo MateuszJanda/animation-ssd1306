@@ -30,8 +30,13 @@ def resize_image(file_name: str) -> np.ndarray:
 
     # Convert to grayscale
     gray_image = cv2.cvtColor(new_size_image, cv2.COLOR_BGR2GRAY)
-    output_image = cv2.threshold(gray_image, THRESHOLD, 255, cv2.THRESH_BINARY)[1]
+    # output_image = cv2.threshold(gray_image, THRESHOLD, 255, cv2.THRESH_BINARY)[1]
     # output_image = cv2.threshold(gray_image, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
+    # output_image = cv2.adaptiveThreshold(
+    #     gray_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 13, 5
+    # )
+    # Finds edges in an image using the Canny algorithm
+    output_image = cv2.Canny(gray_image, 150, 250)
 
     cv2.imshow("image_window", output_image)
     cv2.waitKey(0)
