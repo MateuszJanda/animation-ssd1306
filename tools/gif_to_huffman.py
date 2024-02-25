@@ -37,11 +37,38 @@ def resize_image(file_name: str) -> np.ndarray:
     # )
     # Finds edges in an image using the Canny algorithm
     output_image = cv2.Canny(gray_image, 150, 250)
+    print(
+        f"output_image, Height x Width x Channels: {output_image.shape}, dtype: {output_image.dtype}"
+    )
 
     cv2.imshow("image_window", output_image)
     cv2.waitKey(0)
 
     return output_image
+
+
+def convert_image_to_array(image: np.ndarray) -> str:
+    """Convert image (numpy array) to rust array."""
+    output = "#[rustfmt::skip]\n"
+    output += "const SKULL_FRAME: &[u8] = &[\n"
+    # output_image[output_image > 0] = 1
+    for y in range(image.shape[0]):
+        output += "    "
+        for x in range(image.shape[1] // 8):
+            output += (
+                "0b"
+                + "".join(
+                    ["1" if val > 0 else "0" for val in image[y, x * 8 : (x * 8) + 8]]
+                )
+                + ","
+            )
+
+        output += "\n"
+
+    output += "];\n"
+
+    print(output)
+    return output
 
 
 def main() -> None:
@@ -54,7 +81,8 @@ def main() -> None:
         [file_path for file_path in Path("./").rglob("*.bmp") if file_path.is_file()]
     )
 
-    resize_image("0001.bmp")
+    image = resize_image("0001.bmp")
+    convert_image_to_array(image)
     # images = [resize_image(file_name) for file_name in files_paths]
 
 

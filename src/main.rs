@@ -12,6 +12,8 @@ use embedded_graphics::{
 
 use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
+use animation_ssd1306::raw_image::skull_frame;
+// use animation_ssd1306::skull_frame;
 
 #[arduino_hal::entry]
 fn main() -> ! {
