@@ -1,19 +1,21 @@
 #![no_std]
 #![no_main]
 
+use animation_ssd1306::raw_image::DATA;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 
 use embedded_graphics::{
+    image::{Image, ImageRaw},
     pixelcolor::BinaryColor,
     prelude::*,
     primitives::{PrimitiveStyleBuilder, Rectangle},
 };
 
+use animation_ssd1306::raw_image::SKULL_FRAME;
 use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
-use animation_ssd1306::raw_image::skull_frame;
-// use animation_ssd1306::skull_frame;
+use animation_ssd1306::*;
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -45,7 +47,7 @@ fn main() -> ! {
     let mut delay = Delay::new();
 
     let interface = SPIInterface::new(spi, dc_pin, cs_pin);
-    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
+    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180)
         .into_buffered_graphics_mode();
 
     display.reset(&mut rst_pin, &mut delay).unwrap();
@@ -62,6 +64,15 @@ fn main() -> ! {
         .into_styled(style)
         .draw(&mut display)
         .unwrap();
+
+    display.flush().unwrap();
+    ufmt::uwriteln!(&mut serial, "After rectangle.").unwrap();
+
+    let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);
+    // let raw_image = ImageRaw::<BinaryColor>::new(DATA, 12);
+    let image = Image::new(&raw_image, Point::zero());
+    // let image = Image::new(&raw_image, Point::new(50, 50));
+    image.draw(&mut display).unwrap();
 
     display.flush().unwrap();
 
