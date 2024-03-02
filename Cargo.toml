@@ -14,8 +14,13 @@ panic-halt = "0.2.0"
 ufmt = "0.2.0"
 nb = "0.1.2"
 embedded-hal = "0.2.3"
-ssd1306 = "0.8.4"
+# ssd1306 = "0.8.4"
 embedded-graphics = "0.8.1"
+display-interface = "0.5.0"
+embedded-graphics-core = "0.4.0"
+
+[dependencies.ssd1306]
+path = "../ssd1306"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"

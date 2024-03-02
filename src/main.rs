@@ -12,10 +12,13 @@ use embedded_graphics::{
     primitives::{PrimitiveStyleBuilder, Rectangle},
 };
 
+use animation_ssd1306::non_buffered_mode::MyType;
+use animation_ssd1306::non_buffered_mode::NonBufferedMode;
 use animation_ssd1306::raw_image::SKULL_FRAME;
-use panic_halt as _;
-use ssd1306::{prelude::*, Ssd1306};
 use animation_ssd1306::*;
+use panic_halt as _;
+use ssd1306::mode::BasicMode;
+use ssd1306::{prelude::*, Ssd1306};
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -47,26 +50,54 @@ fn main() -> ! {
     let mut delay = Delay::new();
 
     let interface = SPIInterface::new(spi, dc_pin, cs_pin);
-    let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180)
-        .into_buffered_graphics_mode();
+    // let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180)
+    //     .into_buffered_graphics_mode();
+
+    // let mut display = Ssd1306::<_, _, BasicMode>::new(
+    //     interface,
+    //     DisplaySize128x64,
+    //     DisplayRotation::Rotate180,
+    // );
+
+    // let a =         Ssd1306 {
+    //     interface: interface,
+    //     mode: mode,
+    //     size: DisplaySize128x64,
+    //     addr_mode: AddrMode::Page,
+    //     rotation:DisplayRotation::Rotate180
+    // };
+
+    // let mode = NonBufferedMode::new();
+    // let mut display = MyType(Ssd1306::new(
+    //     interface,
+    //     DisplaySize128x64,
+    //     DisplayRotation::Rotate180,
+    // )).into_mode(mode);
+
+    let mode = NonBufferedMode::new();
+    let mut display = MyType::new(Ssd1306::new(
+        interface,
+        DisplaySize128x64,
+        DisplayRotation::Rotate180,
+    ), mode);
 
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
 
     // Print rectangle
-    let style = PrimitiveStyleBuilder::new()
-        .stroke_width(1)
-        .stroke_color(BinaryColor::On)
-        .build();
+    // let style = PrimitiveStyleBuilder::new()
+    //     .stroke_width(1)
+    //     .stroke_color(BinaryColor::On)
+    //     .build();
 
-    let yoffset = 20;
-    Rectangle::new(Point::new(52, yoffset), Size::new_equal(16))
-        .into_styled(style)
-        .draw(&mut display)
-        .unwrap();
+    // let yoffset = 20;
+    // Rectangle::new(Point::new(52, yoffset), Size::new_equal(16))
+    //     .into_styled(style)
+    //     .draw(&mut display)
+    //     .unwrap();
 
-    display.flush().unwrap();
-    ufmt::uwriteln!(&mut serial, "After rectangle.").unwrap();
+    // display.flush().unwrap();
+    // ufmt::uwriteln!(&mut serial, "After rectangle.").unwrap();
 
     let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);
     // let raw_image = ImageRaw::<BinaryColor>::new(DATA, 12);
@@ -74,10 +105,14 @@ fn main() -> ! {
     // let image = Image::new(&raw_image, Point::new(50, 50));
     image.draw(&mut display).unwrap();
 
-    display.flush().unwrap();
+    // display.flush().unwrap();
 
     loop {
         arduino_hal::delay_ms(500);
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
     }
 }
+
+// fn print_type_of<T>(_: &T) {
+//     ufmt::uwriteln!("{}", std::any::type_name::<T>())
+// }

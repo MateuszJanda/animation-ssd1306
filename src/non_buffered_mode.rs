@@ -1,9 +1,12 @@
 //! Non buffered graphics mode.
 
-use display_interface::{DisplayError};
+use display_interface::DisplayError;
 use ssd1306::{
-    command::AddrMode, mode::DisplayConfig, rotation::DisplayRotation, size::DisplaySize, Ssd1306
+    command::AddrMode, mode::BasicMode, mode::DisplayConfig, rotation::DisplayRotation,
+    size::DisplaySize, Ssd1306,
 };
+
+use core::ops::{Deref, DerefMut};
 
 use ssd1306::prelude::WriteOnlyDataCommand;
 
@@ -24,7 +27,7 @@ impl NonBufferedMode
 // SIZE: DisplaySize,
 {
     /// Create a new buffered graphics mode instance.
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             min_x: 255,
             max_x: 0,
@@ -64,7 +67,8 @@ use embedded_graphics_core::{
     Pixel,
 };
 
-pub struct MyType<DI, SIZE>(Ssd1306<DI, SIZE, NonBufferedMode>);
+// pub struct MyType<DI, SIZE>(pub Ssd1306<DI, SIZE, BasicMode>);
+pub struct MyType<DI, SIZE>(pub Ssd1306<DI, SIZE, NonBufferedMode>);
 // where
 //     DI: WriteOnlyDataCommand,
 //     SIZE: DisplaySize;
@@ -74,6 +78,15 @@ where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
+    pub fn into_mode(self, mode: NonBufferedMode) -> Self {
+        MyType(self.0.into_mode(mode))
+    }
+
+    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode) -> Self
+    {
+        MyType(ssd.into_mode(mode))
+    }
+
     fn clear_impl(&mut self, value: bool) {
         // let (width, height) = self.0.dimensions();
         // self.0.mode.min_x = 0;
@@ -128,20 +141,20 @@ where
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
     {
-        let bb = self.bounding_box();
+        // let bb = self.bounding_box();
 
-        pixels
-            .into_iter()
-            .filter(|Pixel(pos, _color)| bb.contains(*pos))
-            .for_each(|Pixel(pos, color)| {
-                self.set_pixel(pos.x as u32, pos.y as u32, color.is_on());
-            });
+        // pixels
+        //     .into_iter()
+        //     .filter(|Pixel(pos, _color)| bb.contains(*pos))
+        //     .for_each(|Pixel(pos, color)| {
+        //         self.set_pixel(pos.x as u32, pos.y as u32, color.is_on());
+        //     });
 
         Ok(())
     }
 
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        self.clear_impl(color.is_on());
+        // self.clear_impl(color.is_on());
         Ok(())
     }
 }
@@ -155,5 +168,42 @@ where
         let (w, h) = self.0.dimensions();
 
         Size::new(w.into(), h.into())
+    }
+}
+
+impl<DI, SIZE> DisplayConfig for MyType<DI, SIZE>
+where
+    DI: WriteOnlyDataCommand,
+    SIZE: DisplaySize,
+{
+    type Error = DisplayError;
+
+    /// Set the display rotation
+    ///
+    /// This method resets the cursor but does not clear the screen.
+    fn set_rotation(&mut self, rot: DisplayRotation) -> Result<(), DisplayError> {
+        // self.set_rotation(rot)
+        Ok(())
+    }
+
+    /// Initialise and clear the display in graphics mode.
+    fn init(&mut self) -> Result<(), DisplayError> {
+        // self.clear_impl(false);
+        // self.init_with_addr_mode(AddrMode::Horizontal)
+        Ok(())
+    }
+}
+
+impl<DI, SIZE> Deref for MyType<DI, SIZE> {
+    type Target = Ssd1306<DI, SIZE, NonBufferedMode>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<DI, SIZE> DerefMut for MyType<DI, SIZE> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
