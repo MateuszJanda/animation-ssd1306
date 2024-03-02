@@ -35,6 +35,14 @@ impl NonBufferedMode
             max_y: 0,
         }
     }
+
+    // /// TODO
+    // pub fn reset(&mut self, width: u8, height: u8) {
+    //     self.min_x = 0;
+    //     self.max_x = width - 1;
+    //     self.min_y = 0;
+    //     self.max_y = height - 1;
+    // }
 }
 
 // impl<DI, SIZE> DisplayConfig for Ssd1306<DI, SIZE, NonBufferedMode<SIZE>>
@@ -82,17 +90,17 @@ where
         MyType(self.0.into_mode(mode))
     }
 
-    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode) -> Self
-    {
+    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode) -> Self {
         MyType(ssd.into_mode(mode))
     }
 
     fn clear_impl(&mut self, value: bool) {
-        // let (width, height) = self.0.dimensions();
-        // self.0.mode.min_x = 0;
-        // self.0.mode.max_x = width - 1;
-        // self.0.mode.min_y = 0;
-        // self.0.mode.max_y = height - 1;
+        let (width, height) = self.dimensions();
+        self.mode_mut().min_x = 0;
+        self.mode_mut().min_x = 0;
+        self.mode_mut().max_x = width - 1;
+        self.mode_mut().min_y = 0;
+        self.mode_mut().max_y = height - 1;
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
@@ -154,7 +162,7 @@ where
     }
 
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
-        // self.clear_impl(color.is_on());
+        self.clear_impl(color.is_on());
         Ok(())
     }
 }
@@ -182,15 +190,13 @@ where
     ///
     /// This method resets the cursor but does not clear the screen.
     fn set_rotation(&mut self, rot: DisplayRotation) -> Result<(), DisplayError> {
-        // self.set_rotation(rot)
-        Ok(())
+        self.0.set_rotation(rot)
     }
 
     /// Initialise and clear the display in graphics mode.
     fn init(&mut self) -> Result<(), DisplayError> {
-        // self.clear_impl(false);
-        // self.init_with_addr_mode(AddrMode::Horizontal)
-        Ok(())
+        self.clear_impl(false);
+        self.init_with_addr_mode(AddrMode::Horizontal)
     }
 }
 
