@@ -33,7 +33,7 @@ pub struct NonBufferedMode<'a>
     max_x: u8,
     min_y: u8,
     max_y: u8,
-    ppp: &'a mut dyn FnMut(&str) -> (),
+    print_debug: &'a mut dyn FnMut(&str) -> (),
 }
 
 // impl<SIZE> NonBufferedMode<SIZE>
@@ -45,7 +45,7 @@ impl<'a> NonBufferedMode<'a>
     // pub fn new() -> Self {
     // pub fn new(serial :& mut arduino_hal::hal::usart::Usart<Atmega, USART0, avr_hal_generic::port::Pin<Input, PD0>, avr_hal_generic::port::Pin<Output, PD1>, MHz16>) -> Self {
     // pub fn new(serial: &mut Usart<Atmega, USART0, Pin<Input, PD0>, Pin<Output, PD1>, MHz16>) -> Self {
-    pub fn new(ppp: &'a mut dyn FnMut(&str) -> ()) -> Self {
+    pub fn new(print_debug: &'a mut dyn FnMut(&str) -> ()) -> Self {
         Self {
             buffer: [0],
             min_x: 255,
@@ -53,7 +53,7 @@ impl<'a> NonBufferedMode<'a>
             min_y: 255,
             max_y: 0,
             // serial:
-            ppp,
+            print_debug,
         }
     }
 
@@ -130,7 +130,7 @@ where
 
     pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
         {
-            (self.mode_mut().ppp)("asdf");
+            (self.mode_mut().print_debug)("asdf");
         }
         let rotation = self.rotation();
 
