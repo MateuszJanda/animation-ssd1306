@@ -33,7 +33,8 @@ pub struct NonBufferedMode<'a>
     max_x: u8,
     min_y: u8,
     max_y: u8,
-    print_debug: &'a mut dyn FnMut(&str) -> (),
+    // print_debug: &'a mut dyn FnMut(&str) -> (),
+    print_debug: &'a mut dyn FnMut(u32) -> (),
 }
 
 // impl<SIZE> NonBufferedMode<SIZE>
@@ -45,7 +46,8 @@ impl<'a> NonBufferedMode<'a>
     // pub fn new() -> Self {
     // pub fn new(serial :& mut arduino_hal::hal::usart::Usart<Atmega, USART0, avr_hal_generic::port::Pin<Input, PD0>, avr_hal_generic::port::Pin<Output, PD1>, MHz16>) -> Self {
     // pub fn new(serial: &mut Usart<Atmega, USART0, Pin<Input, PD0>, Pin<Output, PD1>, MHz16>) -> Self {
-    pub fn new(print_debug: &'a mut dyn FnMut(&str) -> ()) -> Self {
+    // pub fn new(print_debug: &'a mut dyn FnMut(&str) -> ()) -> Self {
+    pub fn new(print_debug: &'a mut dyn FnMut(u32) -> ()) -> Self {
         Self {
             buffer: [0],
             min_x: 255,
@@ -126,12 +128,15 @@ where
         self.mode_mut().max_y = height - 1;
 
         // TODO trigger clear
+        // (self.mode_mut().print_debug)("clear_impl");
+
+        // self.set_pixel(1, 1, true);
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
-        {
-            (self.mode_mut().print_debug)("asdf");
-        }
+        // {
+        //     (self.mode_mut().print_debug)("asdf");
+        // }
         let rotation = self.rotation();
 
         let bit = match rotation {
@@ -192,6 +197,8 @@ where
             return Ok(());
         }
 
+        // (self.mode_mut().print_debug)("flush");
+
         let (width, height) = self.dimensions();
 
         // Determine which bytes need to be sent
@@ -226,7 +233,8 @@ where
         };
 
         // let ccc: [u8; 1] = [4];
-        let byte_buffer = self.mode().buffer;
+        // let byte_buffer = self.mode().buffer;
+        let byte_buffer = [255];
 
         match self.rotation() {
             DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => {
@@ -235,6 +243,10 @@ where
                     (disp_max_x + offset_x, disp_max_y + SIZE::OFFSETY),
                 )?;
 
+                (self.mode_mut().print_debug)(disp_min_x as u32);
+                (self.mode_mut().print_debug)(disp_max_x as u32);
+                (self.mode_mut().print_debug)(disp_min_y as u32);
+                (self.mode_mut().print_debug)(disp_max_y as u32);
                 Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
                     &mut self.interface_mut(),
                     &byte_buffer,

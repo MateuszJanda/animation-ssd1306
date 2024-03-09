@@ -75,10 +75,11 @@ fn main() -> ! {
     // )).into_mode(mode);
 
     // let () = serial;
-    let mut ppp = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
+    // let mut ppp = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
+    let mut ppp2 = |num: u32| -> () { ufmt::uwriteln!(&mut serial, "{}", num).unwrap() };
     // let mut ppp = || -> () { 1337; };
 
-    let mode = NonBufferedMode::new(&mut ppp);
+    let mode = NonBufferedMode::new(&mut ppp2);
     let mut display = MyType::new(
         Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180),
         mode,
@@ -91,8 +92,7 @@ fn main() -> ! {
         .stroke_width(1)
         .stroke_color(BinaryColor::On)
         .build();
-    let yoffset = 20;
-    match Rectangle::new(Point::new(52, yoffset), Size::new_equal(2))
+    match Rectangle::new(Point::new(1, 1), Size::new_equal(5))
         .into_styled(style)
         .draw(&mut display)
     {
