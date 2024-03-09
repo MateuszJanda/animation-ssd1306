@@ -26,7 +26,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
-    ufmt::uwriteln!(&mut serial, "Init SPI ").unwrap();
+    ufmt::uwriteln!(&mut serial, "Init SPI.").unwrap();
 
     let settings = spi::Settings {
         data_order: spi::DataOrder::MostSignificantFirst,
@@ -74,40 +74,40 @@ fn main() -> ! {
     //     DisplayRotation::Rotate180,
     // )).into_mode(mode);
 
-    let mode = NonBufferedMode::new();
-    let mut display = MyType::new(Ssd1306::new(
-        interface,
-        DisplaySize128x64,
-        DisplayRotation::Rotate180,
-    ), mode);
+    // let () = serial;
+    let mut ppp = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
+    // let mut ppp = || -> () { 1337; };
+
+    let mode = NonBufferedMode::new(&mut ppp);
+    let mut display = MyType::new(
+        Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180),
+        mode,
+    );
 
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
 
-    // Print rectangle
-    // let style = PrimitiveStyleBuilder::new()
-    //     .stroke_width(1)
-    //     .stroke_color(BinaryColor::On)
-    //     .build();
+    let style = PrimitiveStyleBuilder::new()
+        .stroke_width(1)
+        .stroke_color(BinaryColor::On)
+        .build();
+    let yoffset = 20;
+    match Rectangle::new(Point::new(52, yoffset), Size::new_equal(2))
+        .into_styled(style)
+        .draw(&mut display)
+    {
+        Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle success.").unwrap(),
+        Err(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle fail.").unwrap(),
+    }
+    ufmt::uwriteln!(&mut serial, "BUKA rectangle.").unwrap();
 
-    // let yoffset = 20;
-    // Rectangle::new(Point::new(52, yoffset), Size::new_equal(16))
-    //     .into_styled(style)
-    //     .draw(&mut display)
-    //     .unwrap();
-
-    // display.flush().unwrap();
-    // ufmt::uwriteln!(&mut serial, "After rectangle.").unwrap();
-
-    let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);
-    // let raw_image = ImageRaw::<BinaryColor>::new(DATA, 12);
-    let image = Image::new(&raw_image, Point::zero());
-    // let image = Image::new(&raw_image, Point::new(50, 50));
-    image.draw(&mut display).unwrap();
-
-    ufmt::uwriteln!(&mut serial, "Here.").unwrap();
-
-    // display.flush().unwrap();
+    // let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);
+    // let image = Image::new(&raw_image, Point::zero());
+    // match image.draw(&mut display) {
+    //     Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA skull success.").unwrap(),
+    //     Err(_) => ufmt::uwriteln!(&mut serial, "BUKA skull fail.").unwrap(),
+    // }
+    // ufmt::uwriteln!(&mut serial, "BUKA skull.").unwrap();
 
     loop {
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();

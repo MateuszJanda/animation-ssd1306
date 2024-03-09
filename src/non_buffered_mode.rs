@@ -12,8 +12,19 @@ use core::ops::{Deref, DerefMut};
 
 use ssd1306::prelude::WriteOnlyDataCommand;
 
-#[derive(Clone, Debug)]
-pub struct NonBufferedMode
+// use arduino_hal::spi;
+// use arduino_hal::Delay;
+// use arduino_hal::Usart;
+// // use arduino_hal::Atmega;
+// use arduino_hal::clock::MHz16;
+// use arduino_hal::pac::USART0;
+// use arduino_hal::port::mode::Input;
+// use arduino_hal::port::mode::Output;
+// use arduino_hal::port::Pin;
+
+// #[derive(Clone, Debug)]
+// #[derive(Clone)]
+pub struct NonBufferedMode<'a>
 // where
 // SIZE: DisplaySize,
 {
@@ -22,21 +33,27 @@ pub struct NonBufferedMode
     max_x: u8,
     min_y: u8,
     max_y: u8,
+    ppp: &'a mut dyn FnMut(&str) -> (),
 }
 
 // impl<SIZE> NonBufferedMode<SIZE>
-impl NonBufferedMode
+impl<'a> NonBufferedMode<'a>
 // where
 // SIZE: DisplaySize,
 {
     /// Create a new buffered graphics mode instance.
-    pub fn new() -> Self {
+    // pub fn new() -> Self {
+    // pub fn new(serial :& mut arduino_hal::hal::usart::Usart<Atmega, USART0, avr_hal_generic::port::Pin<Input, PD0>, avr_hal_generic::port::Pin<Output, PD1>, MHz16>) -> Self {
+    // pub fn new(serial: &mut Usart<Atmega, USART0, Pin<Input, PD0>, Pin<Output, PD1>, MHz16>) -> Self {
+    pub fn new(ppp: &'a mut dyn FnMut(&str) -> ()) -> Self {
         Self {
             buffer: [0],
             min_x: 255,
             max_x: 0,
             min_y: 255,
             max_y: 0,
+            // serial:
+            ppp,
         }
     }
 
@@ -80,12 +97,14 @@ use embedded_graphics_core::{
 };
 
 // pub struct MyType<DI, SIZE>(pub Ssd1306<DI, SIZE, BasicMode>);
-pub struct MyType<DI, SIZE>(pub Ssd1306<DI, SIZE, NonBufferedMode>);
+
+// type Target<'a> = Ssd1306<DI, SIZE, NonBufferedMode<'a>>;
+pub struct MyType<'a, DI, SIZE>(pub Ssd1306<DI, SIZE, NonBufferedMode<'a>>);
 // where
 //     DI: WriteOnlyDataCommand,
 //     SIZE: DisplaySize;
 
-impl<DI, SIZE> MyType<DI, SIZE>
+impl<'a, DI, SIZE> MyType<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -94,7 +113,7 @@ where
     //     MyType(self.0.into_mode(mode))
     // }
 
-    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode) -> Self {
+    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode<'a>) -> Self {
         MyType(ssd.into_mode(mode))
     }
 
@@ -110,6 +129,9 @@ where
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
+        {
+            (self.mode_mut().ppp)("asdf");
+        }
         let rotation = self.rotation();
 
         let bit = match rotation {
@@ -165,7 +187,7 @@ where
     ///
     /// This only updates the parts of the display that have changed since the last flush.
     pub fn flush(&mut self) -> Result<(), DisplayError> {
-        // // Nothing to do if no pixels have changed since the last update
+        // Nothing to do if no pixels have changed since the last update
         if self.mode().max_x < self.mode().min_x || self.mode().max_y < self.mode().min_y {
             return Ok(());
         }
@@ -239,7 +261,7 @@ where
     }
 }
 
-impl<DI, SIZE> DrawTarget for MyType<DI, SIZE>
+impl<'a, DI, SIZE> DrawTarget for MyType<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -269,7 +291,7 @@ where
     }
 }
 
-impl<DI, SIZE> OriginDimensions for MyType<DI, SIZE>
+impl<'a, DI, SIZE> OriginDimensions for MyType<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -281,7 +303,7 @@ where
     }
 }
 
-impl<DI, SIZE> DisplayConfig for MyType<DI, SIZE>
+impl<'a, DI, SIZE> DisplayConfig for MyType<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -302,15 +324,15 @@ where
     }
 }
 
-impl<DI, SIZE> Deref for MyType<DI, SIZE> {
-    type Target = Ssd1306<DI, SIZE, NonBufferedMode>;
+impl<'a, DI, SIZE> Deref for MyType<'a, DI, SIZE> {
+    type Target = Ssd1306<DI, SIZE, NonBufferedMode<'a>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<DI, SIZE> DerefMut for MyType<DI, SIZE> {
+impl<'a, DI, SIZE> DerefMut for MyType<'a, DI, SIZE> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
