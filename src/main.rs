@@ -26,7 +26,7 @@ fn main() -> ! {
     let pins = arduino_hal::pins!(dp);
 
     let mut serial = arduino_hal::default_serial!(dp, pins, 57600);
-    ufmt::uwriteln!(&mut serial, "Init SPI.").unwrap();
+    ufmt::uwriteln!(&mut serial, "Init SPI ").unwrap();
 
     let settings = spi::Settings {
         data_order: spi::DataOrder::MostSignificantFirst,
@@ -105,11 +105,13 @@ fn main() -> ! {
     // let image = Image::new(&raw_image, Point::new(50, 50));
     image.draw(&mut display).unwrap();
 
+    ufmt::uwriteln!(&mut serial, "Here.").unwrap();
+
     // display.flush().unwrap();
 
     loop {
-        arduino_hal::delay_ms(500);
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
+        arduino_hal::delay_ms(500);
     }
 }
 
