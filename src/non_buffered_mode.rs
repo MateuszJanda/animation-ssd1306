@@ -33,8 +33,8 @@ pub struct NonBufferedMode<'a>
     max_x: u8,
     min_y: u8,
     max_y: u8,
-    // print_debug: &'a mut dyn FnMut(&str) -> (),
-    print_debug: &'a mut dyn FnMut(u32) -> (),
+    // print_str: &'a mut dyn FnMut(&str) -> (),
+    print_debug: &'a mut dyn FnMut(&str, i32) -> (),
 }
 
 // impl<SIZE> NonBufferedMode<SIZE>
@@ -47,7 +47,7 @@ impl<'a> NonBufferedMode<'a>
     // pub fn new(serial :& mut arduino_hal::hal::usart::Usart<Atmega, USART0, avr_hal_generic::port::Pin<Input, PD0>, avr_hal_generic::port::Pin<Output, PD1>, MHz16>) -> Self {
     // pub fn new(serial: &mut Usart<Atmega, USART0, Pin<Input, PD0>, Pin<Output, PD1>, MHz16>) -> Self {
     // pub fn new(print_debug: &'a mut dyn FnMut(&str) -> ()) -> Self {
-    pub fn new(print_debug: &'a mut dyn FnMut(u32) -> ()) -> Self {
+    pub fn new(print_debug: &'a mut dyn FnMut(&str, i32) -> ()) -> Self {
         Self {
             buffer: [0],
             min_x: 255,
@@ -55,6 +55,7 @@ impl<'a> NonBufferedMode<'a>
             min_y: 255,
             max_y: 0,
             // serial:
+            // print_str,
             print_debug,
         }
     }
@@ -243,10 +244,10 @@ where
                     (disp_max_x + offset_x, disp_max_y + SIZE::OFFSETY),
                 )?;
 
-                (self.mode_mut().print_debug)(disp_min_x as u32);
-                (self.mode_mut().print_debug)(disp_max_x as u32);
-                (self.mode_mut().print_debug)(disp_min_y as u32);
-                (self.mode_mut().print_debug)(disp_max_y as u32);
+                (self.mode_mut().print_debug)("", disp_min_x as i32);
+                (self.mode_mut().print_debug)("", disp_max_x as i32);
+                (self.mode_mut().print_debug)("", disp_min_y as i32);
+                (self.mode_mut().print_debug)("", disp_max_y as i32);
                 Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
                     &mut self.interface_mut(),
                     &byte_buffer,

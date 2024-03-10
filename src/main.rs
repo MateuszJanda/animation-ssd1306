@@ -75,11 +75,11 @@ fn main() -> ! {
     // )).into_mode(mode);
 
     // let () = serial;
-    // let mut ppp = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
-    let mut ppp2 = |num: u32| -> () { ufmt::uwriteln!(&mut serial, "{}", num).unwrap() };
-    // let mut ppp = || -> () { 1337; };
+    // let mut print_str = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
+    let mut print_debug = |text: &str, num: i32| -> () { ufmt::uwriteln!(&mut serial, "{}", num).unwrap() };
+    // let mut print_str = || -> () { 1337; };
 
-    let mode = NonBufferedMode::new(&mut ppp2);
+    let mode = NonBufferedMode::new(&mut print_debug);
     let mut display = MyType::new(
         Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180),
         mode,
