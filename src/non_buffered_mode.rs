@@ -139,6 +139,7 @@ where
         let xmin = 0 + offset_x;
         let ymin = 0 + SIZE::OFFSETY;
         let xmax = 128 + offset_x;
+        // let xmax = 64 + offset_x;
         let ymax = 63 + SIZE::OFFSETY;
 
         (self.mode_mut().print_debug)("clear_impl xmin", xmin as i32);
@@ -148,10 +149,20 @@ where
 
         self.set_draw_area((xmin, ymin), (xmax, ymax)).unwrap();
 
-        // for _ in 0..1 {
-        //     let c = &[0x00];
-        //     self.interface_mut().send_data(U8(c)).unwrap();
-        // }
+        for _ in 0..1024 {
+            let c = &[0xff];
+            // let c = &[0x00];
+            // let c = &[0b1010_1010];
+            self.interface_mut().send_data(U8(c)).unwrap();
+        }
+
+        self.set_draw_area((xmin + 8, ymin + 2), (xmax, ymax)).unwrap();
+
+        for _ in 0..112 {
+            // let c = &[0xff];
+            let c = &[0b1010_1010];
+            self.interface_mut().send_data(U8(c)).unwrap();
+        }
 
         (self.mode_mut().print_debug)("After clear", 0);
     }
