@@ -121,6 +121,7 @@ where
     }
 
     fn clear_impl(&mut self, value: bool) {
+        (self.mode_mut().print_debug)("Before clear", 0);
         let (width, height) = self.dimensions();
         self.mode_mut().min_x = 0;
         self.mode_mut().min_x = 0;
@@ -132,6 +133,27 @@ where
         // (self.mode_mut().print_debug)("clear_impl");
 
         // self.set_pixel(1, 1, true);
+
+        let offset_x = SIZE::DRIVER_COLS - SIZE::WIDTH - SIZE::OFFSETX;
+
+        let xmin = 0 + offset_x;
+        let ymin = 0 + SIZE::OFFSETY;
+        let xmax = 128 + offset_x;
+        let ymax = 63 + SIZE::OFFSETY;
+
+        (self.mode_mut().print_debug)("clear_impl xmin", xmin as i32);
+        (self.mode_mut().print_debug)("clear_impl ymin", ymin as i32);
+        (self.mode_mut().print_debug)("clear_impl xmax", xmax as i32);
+        (self.mode_mut().print_debug)("clear_impl ymax", ymax as i32);
+
+        self.set_draw_area((xmin, ymin), (xmax, ymax)).unwrap();
+
+        // for _ in 0..1 {
+        //     let c = &[0x00];
+        //     self.interface_mut().send_data(U8(c)).unwrap();
+        // }
+
+        (self.mode_mut().print_debug)("After clear", 0);
     }
 
     pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
@@ -244,17 +266,19 @@ where
                     (disp_max_x + offset_x, disp_max_y + SIZE::OFFSETY),
                 )?;
 
-                (self.mode_mut().print_debug)("", disp_min_x as i32);
-                (self.mode_mut().print_debug)("", disp_max_x as i32);
-                (self.mode_mut().print_debug)("", disp_min_y as i32);
-                (self.mode_mut().print_debug)("", disp_max_y as i32);
-                Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
-                    &mut self.interface_mut(),
-                    &byte_buffer,
-                    width as usize,
-                    (disp_min_x, disp_min_y),
-                    (disp_max_x, disp_max_y),
-                )
+                (self.mode_mut().print_debug)("Flush disp_min_x", disp_min_x as i32);
+                (self.mode_mut().print_debug)("Flush disp_max_x", disp_max_x as i32);
+                (self.mode_mut().print_debug)("Flush disp_min_y", disp_min_y as i32);
+                (self.mode_mut().print_debug)("Flush disp_max_y", disp_max_y as i32);
+                // Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
+                //     &mut self.interface_mut(),
+                //     &byte_buffer,
+                //     width as usize,
+                //     (disp_min_x, disp_min_y),
+                //     (disp_max_x, disp_max_y),
+                // )
+
+                Ok(())
             }
             DisplayRotation::Rotate90 | DisplayRotation::Rotate270 => {
                 self.set_draw_area(
@@ -332,6 +356,7 @@ where
 
     /// Initialise and clear the display in graphics mode.
     fn init(&mut self) -> Result<(), DisplayError> {
+        (self.mode_mut().print_debug)("MyType init", 0);
         self.clear_impl(false);
         self.init_with_addr_mode(AddrMode::Horizontal)
     }

@@ -76,7 +76,9 @@ fn main() -> ! {
 
     // let () = serial;
     // let mut print_str = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
-    let mut print_debug = |text: &str, num: i32| -> () { ufmt::uwriteln!(&mut serial, "{}", num).unwrap() };
+    let mut print_debug = |text: &str, num: i32| -> () {
+        ufmt::uwriteln!(&mut serial, "{} {}", text, num).unwrap()
+    };
     // let mut print_str = || -> () { 1337; };
 
     let mode = NonBufferedMode::new(&mut print_debug);
@@ -87,6 +89,8 @@ fn main() -> ! {
 
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
+
+    // ufmt::uwriteln!(&mut serial, "After init").unwrap();
 
     let style = PrimitiveStyleBuilder::new()
         .stroke_width(1)
