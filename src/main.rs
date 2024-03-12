@@ -98,7 +98,7 @@ fn main() -> ! {
         .stroke_width(1)
         .stroke_color(BinaryColor::On)
         .build();
-    match Rectangle::new(Point::new(1, 1), Size::new_equal(25))
+    match Rectangle::new(Point::new(1, 1), Size::new_equal(5))
         .into_styled(style)
         .draw(&mut display)
     {

@@ -144,26 +144,27 @@ where
 
         // self.set_pixel(1, 1, true);
 
-        let offset_x = SIZE::DRIVER_COLS - SIZE::WIDTH - SIZE::OFFSETX;
+        // let offset_x = SIZE::DRIVER_COLS - SIZE::WIDTH - SIZE::OFFSETX;
 
-        let xmin = 0 + offset_x;
-        let ymin = 0 + SIZE::OFFSETY;
-        let xmax = 128 + offset_x;
+        let disp_min_x = 0;
+        let disp_min_y = 0;
+        let disp_max_x = width;
         // let xmax = 64 + offset_x;
-        let ymax = 63 + SIZE::OFFSETY;
+        let disp_max_y = height;
 
-        (self.mode_mut().print_debug)("clear_impl xmin", xmin as i32);
-        (self.mode_mut().print_debug)("clear_impl ymin", ymin as i32);
-        (self.mode_mut().print_debug)("clear_impl xmax", xmax as i32);
-        (self.mode_mut().print_debug)("clear_impl ymax", ymax as i32);
+        (self.mode_mut().print_debug)("clear_impl disp_min_x", disp_min_x as i32);
+        (self.mode_mut().print_debug)("clear_impl disp_min_y", disp_min_y as i32);
+        (self.mode_mut().print_debug)("clear_impl disp_max_x", disp_max_x as i32);
+        (self.mode_mut().print_debug)("clear_impl disp_max_y", disp_max_y as i32);
 
-        self.set_draw_area((xmin, ymin), (xmax, ymax)).unwrap();
+        self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
+            .unwrap();
 
         let c = match value {
             true => &[0xff],
             false => &[0x00],
         };
-        let num_of_bytes = (width * height) / 8;
+        let num_of_bytes = (width as u32 * height as u32) / 8;
         for _ in 0..num_of_bytes {
             // let c = &[0xff];
             // let c = &[0x00];
