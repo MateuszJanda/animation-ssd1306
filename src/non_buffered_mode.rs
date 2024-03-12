@@ -33,6 +33,8 @@ pub struct NonBufferedMode<'a>
     max_x: u8,
     min_y: u8,
     max_y: u8,
+    last_x: u8,
+    last_y: u8,
     // print_str: &'a mut dyn FnMut(&str) -> (),
     print_debug: &'a mut dyn FnMut(&str, i32) -> (),
 }
@@ -54,6 +56,10 @@ impl<'a> NonBufferedMode<'a>
             max_x: 0,
             min_y: 255,
             max_y: 0,
+
+            last_x: u8::MAX,
+            last_y: u8::MAX,
+
             // serial:
             // print_str,
             print_debug,
@@ -129,6 +135,10 @@ where
         self.mode_mut().min_y = 0;
         self.mode_mut().max_y = height - 1;
 
+        // Invalidate last_x and last_y
+        self.mode_mut().last_x = u8::MAX;
+        self.mode_mut().last_y = u8::MAX;
+
         // TODO trigger clear
         // (self.mode_mut().print_debug)("clear_impl");
 
@@ -153,7 +163,8 @@ where
             true => &[0xff],
             false => &[0x00],
         };
-        for _ in 0..1024 {
+        let num_of_bytes = (width * height) / 8;
+        for _ in 0..num_of_bytes {
             // let c = &[0xff];
             // let c = &[0x00];
             // let c = &[0b1010_1010];
@@ -175,20 +186,29 @@ where
         // {
         //     (self.mode_mut().print_debug)("asdf");
         // }
+
+        (self.mode_mut().print_debug)("set_pixel", 0);
+
+        if self.is_pixel_out_of_buffer(x as u8, y as u8) {
+            self.flush2().unwrap();
+        }
+
+        (self.mode_mut().print_debug)("set_pixel after flush", 0);
+
         let rotation = self.rotation();
 
-        let bit = match rotation {
+        let bit_num = match rotation {
             DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => {
                 // let idx = ((y as usize) / 8 * SIZE::WIDTH as usize) + (x as usize);
-                let bit = y % 8;
+                let bit_num = y % 8;
 
-                bit
+                bit_num
             }
             DisplayRotation::Rotate90 | DisplayRotation::Rotate270 => {
                 // let idx = ((x as usize) / 8 * SIZE::WIDTH as usize) + (y as usize);
-                let bit = x % 8;
+                let bit_num = x % 8;
 
-                bit
+                bit_num
             }
         };
 
@@ -206,8 +226,12 @@ where
         // }
 
         let value = value as u8;
-        self.mode_mut().buffer[0] = self.mode_mut().buffer[0] & !(1 << bit) | (value << bit);
+        self.mode_mut().buffer[0] =
+            self.mode_mut().buffer[0] & !(1 << bit_num) | (value << bit_num);
         // *byte = *byte & !(1 << bit) | (value << bit);
+
+        self.mode_mut().last_x = x as u8;
+        self.mode_mut().last_y = y as u8;
 
         // Self::flush_buffer_chunks(
         //     &mut self.interface,
@@ -223,7 +247,73 @@ where
 
         // TODO Result
 
-        self.flush().unwrap();
+        // self.flush().unwrap();
+    }
+
+    fn is_pixel_out_of_buffer(&mut self, x: u8, y: u8) -> bool {
+        if self.mode().last_x == u8::MAX || self.mode().last_y == u8::MAX {
+            return false;
+        }
+
+        let last_x = self.mode_mut().last_x;
+        let last_y = self.mode_mut().last_y;
+        (self.mode_mut().print_debug)("is-check x", x as i32);
+        (self.mode_mut().print_debug)("is-check y", y as i32);
+        (self.mode_mut().print_debug)("is-check last_x", last_x as i32);
+        (self.mode_mut().print_debug)("is-check last_y", last_y as i32);
+
+        let r = match self.rotation() {
+            DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => {
+                x != self.mode().last_x || (y / 8) != (self.mode().last_y / 8)
+            }
+            DisplayRotation::Rotate90 | DisplayRotation::Rotate270 => {
+                (x / 8) != (self.mode().last_x / 8) || y != self.mode().last_y
+            }
+        };
+
+        (self.mode_mut().print_debug)("is-check result", r as i32);
+
+        r
+    }
+
+    /// TODO
+    pub fn flush2(&mut self) -> Result<(), DisplayError> {
+        if self.mode().last_x == u8::MAX || self.mode().last_y == u8::MAX {
+            return Ok(());
+        }
+
+        (self.mode_mut().print_debug)("flush2 ", 0);
+
+        let (disp_min_x, disp_min_y, disp_max_x, disp_max_y) = match self.rotation() {
+            DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => (
+                self.mode().last_x,
+                self.mode().last_y / 8,
+                self.mode().last_x,
+                self.mode().last_y / 8 + 8,
+            ),
+            DisplayRotation::Rotate90 | DisplayRotation::Rotate270 => (
+                self.mode().last_x / 8,
+                self.mode().last_y,
+                self.mode().last_x / 8 + 8,
+                self.mode().last_y,
+            ),
+        };
+
+        (self.mode_mut().print_debug)("flush2 disp_min_x", disp_min_x as i32);
+        (self.mode_mut().print_debug)("flush2 disp_max_x", disp_max_x as i32);
+        (self.mode_mut().print_debug)("flush2 disp_min_y", disp_min_y as i32);
+        (self.mode_mut().print_debug)("flush2 disp_max_y", disp_max_y as i32);
+
+        self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
+            .unwrap();
+        let byte_buffer = self.mode().buffer;
+        self.interface_mut().send_data(U8(&byte_buffer)).unwrap();
+
+        // Invalidate last_x and last_y
+        self.mode_mut().last_x = u8::MAX;
+        self.mode_mut().last_y = u8::MAX;
+
+        return Ok(());
     }
 
     /// Write out data to a display.
@@ -298,6 +388,7 @@ where
                 //     (disp_min_x, disp_min_y),
                 //     (disp_max_x, disp_max_y),
                 // )
+                self.interface_mut().send_data(U8(&byte_buffer)).unwrap();
 
                 Ok(())
             }
