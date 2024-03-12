@@ -98,13 +98,16 @@ fn main() -> ! {
         .stroke_width(1)
         .stroke_color(BinaryColor::On)
         .build();
-    match Rectangle::new(Point::new(1, 1), Size::new_equal(5))
+    match Rectangle::new(Point::new(1, 1), Size::new_equal(50))
         .into_styled(style)
         .draw(&mut display)
     {
-        Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle success.").unwrap(),
-        Err(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle fail.").unwrap(),
+        // Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle success.").unwrap(),
+        Ok(_) => (),
+        // Err(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle fail.").unwrap(),
+        Err(_) => (),
     }
+    display.flush2().unwrap();
     ufmt::uwriteln!(&mut serial, "BUKA rectangle.").unwrap();
 
     // let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);

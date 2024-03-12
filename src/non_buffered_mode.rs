@@ -188,13 +188,13 @@ where
         //     (self.mode_mut().print_debug)("asdf");
         // }
 
-        (self.mode_mut().print_debug)("set_pixel", 0);
+        // (self.mode_mut().print_debug)("set_pixel", 0);
 
         if self.is_pixel_out_of_buffer(x as u8, y as u8) {
             self.flush2().unwrap();
         }
 
-        (self.mode_mut().print_debug)("set_pixel after flush", 0);
+        // (self.mode_mut().print_debug)("set_pixel after flush", 0);
 
         let rotation = self.rotation();
 
@@ -258,10 +258,10 @@ where
 
         let last_x = self.mode_mut().last_x;
         let last_y = self.mode_mut().last_y;
-        (self.mode_mut().print_debug)("is-check x", x as i32);
-        (self.mode_mut().print_debug)("is-check y", y as i32);
-        (self.mode_mut().print_debug)("is-check last_x", last_x as i32);
-        (self.mode_mut().print_debug)("is-check last_y", last_y as i32);
+        // (self.mode_mut().print_debug)("is-check x", x as i32);
+        // (self.mode_mut().print_debug)("is-check y", y as i32);
+        // (self.mode_mut().print_debug)("is-check last_x", last_x as i32);
+        // (self.mode_mut().print_debug)("is-check last_y", last_y as i32);
 
         let r = match self.rotation() {
             DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => {
@@ -272,7 +272,7 @@ where
             }
         };
 
-        (self.mode_mut().print_debug)("is-check result", r as i32);
+        // (self.mode_mut().print_debug)("is-check result", r as i32);
 
         r
     }
@@ -288,21 +288,21 @@ where
         let (disp_min_x, disp_min_y, disp_max_x, disp_max_y) = match self.rotation() {
             DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => (
                 self.mode().last_x,
-                self.mode().last_y / 8,
+                (self.mode().last_y / 8) * 8,
                 self.mode().last_x,
-                self.mode().last_y / 8 + 8,
+                (self.mode().last_y / 8) * 8 + 8,
             ),
             DisplayRotation::Rotate90 | DisplayRotation::Rotate270 => (
-                self.mode().last_x / 8,
+                (self.mode().last_x / 8) * 8,
                 self.mode().last_y,
-                self.mode().last_x / 8 + 8,
+                (self.mode().last_x / 8) * 8 + 8,
                 self.mode().last_y,
             ),
         };
 
         (self.mode_mut().print_debug)("flush2 disp_min_x", disp_min_x as i32);
-        (self.mode_mut().print_debug)("flush2 disp_max_x", disp_max_x as i32);
         (self.mode_mut().print_debug)("flush2 disp_min_y", disp_min_y as i32);
+        (self.mode_mut().print_debug)("flush2 disp_max_x", disp_max_x as i32);
         (self.mode_mut().print_debug)("flush2 disp_max_y", disp_max_y as i32);
 
         self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
