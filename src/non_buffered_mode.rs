@@ -310,6 +310,9 @@ where
         let byte_buffer = self.mode().buffer;
         self.interface_mut().send_data(U8(&byte_buffer)).unwrap();
 
+        // Empty byte buffer
+        self.mode_mut().buffer = [0x00];
+
         // Invalidate last_x and last_y
         self.mode_mut().last_x = u8::MAX;
         self.mode_mut().last_y = u8::MAX;
