@@ -149,20 +149,24 @@ where
 
         self.set_draw_area((xmin, ymin), (xmax, ymax)).unwrap();
 
+        let c = match value {
+            true => &[0xff],
+            false => &[0x00],
+        };
         for _ in 0..1024 {
-            let c = &[0xff];
+            // let c = &[0xff];
             // let c = &[0x00];
             // let c = &[0b1010_1010];
             self.interface_mut().send_data(U8(c)).unwrap();
         }
 
-        self.set_draw_area((xmin + 8, ymin + 2), (xmax, ymax)).unwrap();
+        // self.set_draw_area((xmin + 8, ymin + 20), (xmax, ymax)).unwrap();
 
-        for _ in 0..112 {
-            // let c = &[0xff];
-            let c = &[0b1010_1010];
-            self.interface_mut().send_data(U8(c)).unwrap();
-        }
+        // for _ in 0..112 {
+        //     // let c = &[0xff];
+        //     let c = &[0b1010_1010];
+        //     self.interface_mut().send_data(U8(c)).unwrap();
+        // }
 
         (self.mode_mut().print_debug)("After clear", 0);
     }
@@ -277,10 +281,16 @@ where
                     (disp_max_x + offset_x, disp_max_y + SIZE::OFFSETY),
                 )?;
 
-                (self.mode_mut().print_debug)("Flush disp_min_x", disp_min_x as i32);
-                (self.mode_mut().print_debug)("Flush disp_max_x", disp_max_x as i32);
-                (self.mode_mut().print_debug)("Flush disp_min_y", disp_min_y as i32);
-                (self.mode_mut().print_debug)("Flush disp_max_y", disp_max_y as i32);
+                // (self.mode_mut().print_debug)("Flush disp_min_x", disp_min_x as i32);
+                // (self.mode_mut().print_debug)("Flush disp_max_x", disp_max_x as i32);
+                // (self.mode_mut().print_debug)("Flush disp_min_y", disp_min_y as i32);
+                // (self.mode_mut().print_debug)("Flush disp_max_y", disp_max_y as i32);
+
+                (self.mode_mut().print_debug)("Flush start.x", (disp_min_x + offset_x) as i32);
+                (self.mode_mut().print_debug)("Flush start.y", (disp_min_y + SIZE::OFFSETY) as i32);
+                (self.mode_mut().print_debug)("Flush end.x", (disp_max_x + offset_x) as i32);
+                (self.mode_mut().print_debug)("Flush end.y", (disp_max_y + SIZE::OFFSETY) as i32);
+
                 // Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
                 //     &mut self.interface_mut(),
                 //     &byte_buffer,

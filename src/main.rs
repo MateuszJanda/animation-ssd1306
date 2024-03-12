@@ -90,6 +90,8 @@ fn main() -> ! {
     display.reset(&mut rst_pin, &mut delay).unwrap();
     display.init().unwrap();
 
+    display.clear(BinaryColor::Off).unwrap();
+
     // ufmt::uwriteln!(&mut serial, "After init").unwrap();
 
     let style = PrimitiveStyleBuilder::new()
