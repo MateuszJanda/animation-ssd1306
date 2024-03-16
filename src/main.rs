@@ -1,7 +1,9 @@
 #![no_std]
 #![no_main]
 
-use animation_ssd1306::raw_image::DATA;
+// use animation_ssd1306::raw_image::DATA;
+use animation_ssd1306::raw_image::*;
+// use animation_ssd1306::raw_image::SKULL_FRAME01;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 
@@ -14,7 +16,7 @@ use embedded_graphics::{
 
 use animation_ssd1306::non_buffered_mode::MyType;
 use animation_ssd1306::non_buffered_mode::NonBufferedMode;
-use animation_ssd1306::raw_image::SKULL_FRAME;
+// use animation_ssd1306::raw_image::SKULL_FRAME;
 use animation_ssd1306::*;
 use panic_halt as _;
 use ssd1306::mode::BasicMode;
@@ -118,7 +120,55 @@ fn main() -> ! {
     // ufmt::uwriteln!(&mut serial, "BUKA skull.").unwrap();
 
     display.setup().unwrap();
-    display.draw_strips_from_buffer(SKULL_FRAME).unwrap();
+
+    // let v = [
+    //     &SKULL_FRAME00,
+    //     &SKULL_FRAME01,
+    //     &SKULL_FRAME02,
+    //     &SKULL_FRAME03,
+    //     &SKULL_FRAME04,
+    //     &SKULL_FRAME05,
+    //     &SKULL_FRAME06,
+    //     &SKULL_FRAME07,
+    //     &SKULL_FRAME08,
+    //     &SKULL_FRAME09,
+    //     &SKULL_FRAME10,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    //     // &SKULL_FRAME00,
+    // ];
+    // for index in (0..=2).into_iter().cycle() {
+    //     // let aa = v[index];
+
+    //     // let aa: &[u8] = match index {
+    //     //         0 => &SKULL_FRAME00,
+    //     //         1 => &SKULL_FRAME01,
+    //     //         _ => &SKULL_FRAME00,
+    //     // };
+
+
+    //     // display.draw_strips_from_buffer(aa).unwrap();
+    //     display.draw_strips_from_buffer(&SKULL_FRAME[index]).unwrap();
+    // }
+
+    display.draw_strips_from_buffer(&SKULL_FRAME00).unwrap();
+
 
     loop {
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();

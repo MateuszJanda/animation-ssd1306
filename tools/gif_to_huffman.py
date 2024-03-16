@@ -75,8 +75,10 @@ def resize_image(file_name: str) -> np.ndarray:
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     """Convert image (numpy array) to rust array."""
 
-    output = "\n"
-    output += f"pub const SKULL_FRAME{file_suffix:02d}: &[u8] = &[\n"
+    if file_suffix == 0:
+        output = "[\n"
+    else:
+        output = "\n[\n"
 
     for y in range(0, image.shape[0], 8):
         output += "    "
@@ -90,7 +92,7 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
 
         output += "\n"
 
-    output += "];\n"
+    output += "],"
 
     print(output)
     return output
@@ -112,6 +114,7 @@ def main() -> None:
 
     with open("raw_image.rs", "w") as f:
         f.write("#[rustfmt::skip]\n")
+        f.write(f"pub const SKULL_FRAME: &[[u8; 1024]; {len(files_paths)}] = &[\n")
         for index, file_path in enumerate(files_paths):
             # image = resize_image("0001.bmp")
             image = resize_image(file_path)
@@ -120,6 +123,8 @@ def main() -> None:
             array = convert_image_to_array2(image, index)
             f.write(array)
             # images = [resize_image(file_name) for file_name in files_paths]
+
+        f.write("\n];\n")
 
 
 if __name__ == "__main__":
