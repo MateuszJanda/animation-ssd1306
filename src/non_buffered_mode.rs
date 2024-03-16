@@ -292,8 +292,8 @@ where
 
     /// TODO
     pub fn draw_strips_from_buffer(&mut self, buffer: &[u8]) -> Result<(), DisplayError> {
-        // let (width, height) = self.dimensions();
-        // let num_of_bytes = (width as usize * height as usize) / 8;
+        let (width, height) = self.dimensions();
+        let num_of_bytes = (width as usize * height as usize) / 8;
         // for _ in 0..num_of_bytes {
         //     // let c = &[0xff];
         //     // let c = &[0x00];

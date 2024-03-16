@@ -113,7 +113,9 @@ def main() -> None:
     )
 
     with open("raw_image.rs", "w") as f:
+        f.write("use avr_progmem::progmem;")
         f.write("#[rustfmt::skip]\n")
+
         f.write(f"pub const SKULL_FRAME: &[[u8; 1024]; {len(files_paths)}] = &[\n")
         for index, file_path in enumerate(files_paths):
             # image = resize_image("0001.bmp")

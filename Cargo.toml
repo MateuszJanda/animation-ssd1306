@@ -18,6 +18,7 @@ embedded-hal = "0.2.3"
 embedded-graphics = "0.8.1"
 display-interface = "0.4.1"
 embedded-graphics-core = "0.4.0"
+avr-progmem = "0.4.0"
 
 [dependencies.ssd1306]
 path = "../ssd1306"

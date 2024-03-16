@@ -16,7 +16,7 @@ use embedded_graphics::{
 
 use animation_ssd1306::non_buffered_mode::MyType;
 use animation_ssd1306::non_buffered_mode::NonBufferedMode;
-// use animation_ssd1306::raw_image::SKULL_FRAME;
+use animation_ssd1306::raw_image::*;
 use animation_ssd1306::*;
 use panic_halt as _;
 use ssd1306::mode::BasicMode;
@@ -125,14 +125,14 @@ fn main() -> ! {
     //     &SKULL_FRAME00,
     //     &SKULL_FRAME01,
     //     &SKULL_FRAME02,
-    //     &SKULL_FRAME03,
-    //     &SKULL_FRAME04,
-    //     &SKULL_FRAME05,
-    //     &SKULL_FRAME06,
-    //     &SKULL_FRAME07,
-    //     &SKULL_FRAME08,
-    //     &SKULL_FRAME09,
-    //     &SKULL_FRAME10,
+    //     // &SKULL_FRAME03,
+    //     // &SKULL_FRAME04,
+    //     // &SKULL_FRAME05,
+    //     // &SKULL_FRAME06,
+    //     // &SKULL_FRAME07,
+    //     // &SKULL_FRAME08,
+    //     // &SKULL_FRAME09,
+    //     // &SKULL_FRAME10,
     //     // &SKULL_FRAME00,
     //     // &SKULL_FRAME00,
     //     // &SKULL_FRAME00,
@@ -153,21 +153,107 @@ fn main() -> ! {
     //     // &SKULL_FRAME00,
     //     // &SKULL_FRAME00,
     // ];
-    // for index in (0..=2).into_iter().cycle() {
-    //     // let aa = v[index];
 
-    //     // let aa: &[u8] = match index {
-    //     //         0 => &SKULL_FRAME00,
-    //     //         1 => &SKULL_FRAME01,
-    //     //         _ => &SKULL_FRAME00,
-    //     // };
+    for index in (0..=2).into_iter().cycle() {
+        // let aa = v[index];
+
+        // match index {
+        //         0 => display.draw_strips_from_buffer(&SKULL_FRAME00).unwrap(),
+        //         1 => display.draw_strips_from_buffer(&SKULL_FRAME01).unwrap(),
+        //         _ => (),
+        // };
+
+        let v= match index {
+            0 => &SKULL_FRAME00,
+            1 => &SKULL_FRAME01,
+            2 => &SKULL_FRAME02,
+            _ => &SKULL_FRAME00,
+        };
+
+        display.setup().unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(0)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(128)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(256)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(384)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(512)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(640)).unwrap();
+        display.draw_strips_from_buffer(&v.load_sub_array::<128>(896)).unwrap();
+
+        // ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
+        arduino_hal::delay_ms(500);
+    }
+
 
 
     //     // display.draw_strips_from_buffer(aa).unwrap();
-    //     display.draw_strips_from_buffer(&SKULL_FRAME[index]).unwrap();
+    //     // display.draw_strips_from_buffer(&SKULL_FRAME[index]).unwrap();
     // }
 
-    display.draw_strips_from_buffer(&SKULL_FRAME00).unwrap();
+    // let data: &[u8] = &SKULL_FRAME00.load();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(0)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(128)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(256)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(384)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(512)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(640)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00.load_sub_array::<128>(896)).unwrap();
+    // // let data = &SKULL_FRAME00.load_sub_array::<128>(1024);
+    // // display.draw_strips_from_buffer(data).unwrap();
+
+    // display.setup().unwrap();
+
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(0)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(128)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(256)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(384)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(512)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(640)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(896)).unwrap();
+
+    display.setup().unwrap();
+
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(0)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(128)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(256)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(384)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(512)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(640)).unwrap();
+    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(896)).unwrap();
+
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(0);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(128);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(256);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(384);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(512);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME00.load_sub_array::<128>(640);
+    // display.draw_strips_from_buffer(data).unwrap();
+
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(0);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(128);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(256);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(384);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(512);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(640);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(768);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(896);
+    // display.draw_strips_from_buffer(data).unwrap();
+    // let data = &SKULL_FRAME01.load_sub_array::<128>(1024);
+    // display.draw_strips_from_buffer(data).unwrap();
+
+    // display.draw_strips_from_buffer(&SKULL_FRAME01).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME00).unwrap();
 
 
     loop {
@@ -175,6 +261,8 @@ fn main() -> ! {
         arduino_hal::delay_ms(500);
     }
 }
+
+
 
 // fn print_type_of<T>(_: &T) {
 //     ufmt::uwriteln!("{}", std::any::type_name::<T>())
