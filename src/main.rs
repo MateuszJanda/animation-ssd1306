@@ -76,9 +76,8 @@ fn main() -> ! {
 
     // let () = serial;
     // let mut print_str = |text: &str| -> () { ufmt::uwriteln!(&mut serial, "{}", text).unwrap() };
-    let mut print_debug = |text: &str, num: i32| -> () {
-        ufmt::uwriteln!(&mut serial, "{} {}", text, num).unwrap()
-    };
+    let mut print_debug =
+        |text: &str, num: i32| -> () { ufmt::uwriteln!(&mut serial, "{} {}", text, num).unwrap() };
     // let mut print_str = || -> () { 1337; };
 
     let mode = NonBufferedMode::new(&mut print_debug);
@@ -94,21 +93,21 @@ fn main() -> ! {
 
     // ufmt::uwriteln!(&mut serial, "After init").unwrap();
 
-    let style = PrimitiveStyleBuilder::new()
-        .stroke_width(1)
-        .stroke_color(BinaryColor::On)
-        .build();
-    match Rectangle::new(Point::new(1, 1), Size::new_equal(50))
-        .into_styled(style)
-        .draw(&mut display)
-    {
-        // Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle success.").unwrap(),
-        Ok(_) => (),
-        // Err(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle fail.").unwrap(),
-        Err(_) => (),
-    }
-    display.flush2().unwrap();
-    ufmt::uwriteln!(&mut serial, "BUKA rectangle.").unwrap();
+    // let style = PrimitiveStyleBuilder::new()
+    //     .stroke_width(1)
+    //     .stroke_color(BinaryColor::On)
+    //     .build();
+    // match Rectangle::new(Point::new(1, 1), Size::new_equal(50))
+    //     .into_styled(style)
+    //     .draw(&mut display)
+    // {
+    //     // Ok(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle success.").unwrap(),
+    //     Ok(_) => (),
+    //     // Err(_) => ufmt::uwriteln!(&mut serial, "BUKA rectangle fail.").unwrap(),
+    //     Err(_) => (),
+    // }
+    // display.flush2().unwrap();
+    // ufmt::uwriteln!(&mut serial, "BUKA rectangle.").unwrap();
 
     // let raw_image = ImageRaw::<BinaryColor>::new(SKULL_FRAME, 128);
     // let image = Image::new(&raw_image, Point::zero());
@@ -117,6 +116,9 @@ fn main() -> ! {
     //     Err(_) => ufmt::uwriteln!(&mut serial, "BUKA skull fail.").unwrap(),
     // }
     // ufmt::uwriteln!(&mut serial, "BUKA skull.").unwrap();
+
+    display.setup().unwrap();
+    display.draw_strips_from_buffer(SKULL_FRAME).unwrap();
 
     loop {
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();

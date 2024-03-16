@@ -278,6 +278,39 @@ where
     }
 
     /// TODO
+    pub fn setup(&mut self) -> Result<(), DisplayError> {
+        let (width, height) = self.dimensions();
+
+        let disp_min_x = 0;
+        let disp_min_y = 0;
+        let disp_max_x = width;
+        // let xmax = 64 + offset_x;
+        let disp_max_y = height;
+
+        self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
+    }
+
+    /// TODO
+    pub fn draw_strips_from_buffer(&mut self, buffer: &[u8]) -> Result<(), DisplayError> {
+        // let (width, height) = self.dimensions();
+        // let num_of_bytes = (width as usize * height as usize) / 8;
+        // for _ in 0..num_of_bytes {
+        //     // let c = &[0xff];
+        //     // let c = &[0x00];
+        //     // let c = &[0b1010_1010];
+        //     self.interface_mut().send_data(U8(c)).unwrap();
+        // }
+
+        self.interface_mut().send_data(U8(buffer))
+
+        // buffer
+        //     .chunks(1)
+        //     .take(num_of_bytes)
+        //     // .map(|s| &s[page_lower..page_upper])
+        //     .try_for_each(|c| self.interface_mut().send_data(U8(c)))
+    }
+
+    /// TODO
     pub fn flush2(&mut self) -> Result<(), DisplayError> {
         if self.mode().last_x == u8::MAX || self.mode().last_y == u8::MAX {
             return Ok(());
@@ -311,7 +344,7 @@ where
         self.interface_mut().send_data(U8(&byte_buffer)).unwrap();
 
         // Empty byte buffer
-        self.mode_mut().buffer = [0x00];
+        self.mode_mut().buffer[0] = 0x00;
 
         // Invalidate last_x and last_y
         self.mode_mut().last_x = u8::MAX;

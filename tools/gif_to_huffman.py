@@ -71,6 +71,32 @@ def convert_image_to_array(image: np.ndarray) -> str:
     return output
 
 
+def convert_image_to_array2(image: np.ndarray) -> str:
+    """Convert image (numpy array) to rust array."""
+    output = "#[rustfmt::skip]\n"
+    output += "pub const SKULL_FRAME: &[u8] = &[\n"
+    # output_image[output_image > 0] = 1
+
+    for y in range(0, image.shape[0], 8):
+        output += "    "
+        for x in range(image.shape[1]):
+            if x != 0:
+                output += " "
+            value = int(
+                "0b"
+                + "".join(["1" if val > 0 else "0" for val in image[y : y + 8, x]]),
+                2,
+            )
+            output += f"0x{value:02x},"
+
+        output += "\n"
+
+    output += "];\n"
+
+    print(output)
+    return output
+
+
 def main() -> None:
     # output = subprocess.run(
     #     ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"%04d.bmp"],
@@ -82,7 +108,8 @@ def main() -> None:
     )
 
     image = resize_image("0001.bmp")
-    convert_image_to_array(image)
+    # convert_image_to_array(image)
+    convert_image_to_array2(image)
     # images = [resize_image(file_name) for file_name in files_paths]
 
 
