@@ -73,6 +73,20 @@ def convert_image_to_array(image: np.ndarray) -> str:
 
 def convert_image_to_array2(image: np.ndarray) -> str:
     """Convert image (numpy array) to rust array."""
+
+    image = np.array(
+        [
+            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
+        ]
+    )
+
     output = "#[rustfmt::skip]\n"
     output += "pub const SKULL_FRAME: &[u8] = &[\n"
     # output_image[output_image > 0] = 1
@@ -82,11 +96,9 @@ def convert_image_to_array2(image: np.ndarray) -> str:
         for x in range(image.shape[1]):
             if x != 0:
                 output += " "
-            value = int(
-                "0b"
-                + "".join(["1" if val > 0 else "0" for val in image[y : y + 8, x]]),
-                2,
-            )
+
+            bits = reversed(["1" if val > 0 else "0" for val in image[y : y + 8, x]])
+            value = int("0b" + "".join(bits), 2)
             output += f"0x{value:02x},"
 
         output += "\n"
