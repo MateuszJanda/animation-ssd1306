@@ -154,7 +154,7 @@ fn main() -> ! {
     //     // &SKULL_FRAME00,
     // ];
 
-    for index in (0..=2).into_iter().cycle() {
+    for index in (0..=23).into_iter().cycle() {
         // let aa = v[index];
 
         // match index {
@@ -167,6 +167,36 @@ fn main() -> ! {
             0 => &SKULL_FRAME00,
             1 => &SKULL_FRAME01,
             2 => &SKULL_FRAME02,
+            3 => &SKULL_FRAME03,
+            4 => &SKULL_FRAME04,
+            5 => &SKULL_FRAME05,
+            6 => &SKULL_FRAME06,
+            7 => &SKULL_FRAME07,
+            8 => &SKULL_FRAME08,
+            9 => &SKULL_FRAME09,
+
+            10 => &SKULL_FRAME10,
+            11 => &SKULL_FRAME11,
+            12 => &SKULL_FRAME12,
+            13 => &SKULL_FRAME13,
+            14 => &SKULL_FRAME14,
+            15 => &SKULL_FRAME15,
+            16 => &SKULL_FRAME16,
+            17 => &SKULL_FRAME17,
+            18 => &SKULL_FRAME18,
+            19 => &SKULL_FRAME19,
+
+            20 => &SKULL_FRAME20,
+            21 => &SKULL_FRAME21,
+            22 => &SKULL_FRAME22,
+            23 => &SKULL_FRAME23,
+            24 => &SKULL_FRAME24,
+            25 => &SKULL_FRAME25,
+            26 => &SKULL_FRAME26,
+            27 => &SKULL_FRAME27,
+            28 => &SKULL_FRAME28,
+            29 => &SKULL_FRAME29,
+
             _ => &SKULL_FRAME00,
         };
 
