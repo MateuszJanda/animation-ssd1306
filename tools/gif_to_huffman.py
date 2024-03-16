@@ -38,58 +38,45 @@ def resize_image(file_name: str) -> np.ndarray:
     # Finds edges in an image using the Canny algorithm
     output_image = cv2.Canny(gray_image, 150, 250)
     print(
-        f"output_image, Height x Width x Channels: {output_image.shape}, dtype: {output_image.dtype}"
+        f"Height x Width x Channels. Input {image.shape}, dtype: {image.dtype}."
+        f" Output {output_image.shape}, dtype: {output_image.dtype}"
     )
 
-    cv2.imshow("image_window", output_image)
-    cv2.waitKey(0)
+    # cv2.imshow("image_window", output_image)
+    # cv2.waitKey(0)
 
     return output_image
 
 
-def convert_image_to_array(image: np.ndarray) -> str:
+# def convert_image_to_array(image: np.ndarray) -> str:
+#     """Convert image (numpy array) to rust array."""
+#     output = "#[rustfmt::skip]\n"
+#     output += "const SKULL_FRAME: &[u8] = &[\n"
+#     # output_image[output_image > 0] = 1
+#     for y in range(image.shape[0]):
+#         output += "    "
+#         for x in range(image.shape[1] // 8):
+#             output += (
+#                 "0b"
+#                 + "".join(
+#                     ["1" if val > 0 else "0" for val in image[y, x * 8 : (x * 8) + 8]]
+#                 )
+#                 + ","
+#             )
+
+#         output += "\n"
+
+#     output += "];\n"
+
+#     print(output)
+#     return output
+
+
+def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     """Convert image (numpy array) to rust array."""
-    output = "#[rustfmt::skip]\n"
-    output += "const SKULL_FRAME: &[u8] = &[\n"
-    # output_image[output_image > 0] = 1
-    for y in range(image.shape[0]):
-        output += "    "
-        for x in range(image.shape[1] // 8):
-            output += (
-                "0b"
-                + "".join(
-                    ["1" if val > 0 else "0" for val in image[y, x * 8 : (x * 8) + 8]]
-                )
-                + ","
-            )
 
-        output += "\n"
-
-    output += "];\n"
-
-    print(output)
-    return output
-
-
-def convert_image_to_array2(image: np.ndarray) -> str:
-    """Convert image (numpy array) to rust array."""
-
-    image = np.array(
-        [
-            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 1.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-            [1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 1.0],
-        ]
-    )
-
-    output = "#[rustfmt::skip]\n"
-    output += "pub const SKULL_FRAME: &[u8] = &[\n"
-    # output_image[output_image > 0] = 1
+    output = "\n"
+    output += f"pub const SKULL_FRAME{file_suffix:02d}: &[u8] = &[\n"
 
     for y in range(0, image.shape[0], 8):
         output += "    "
@@ -110,19 +97,29 @@ def convert_image_to_array2(image: np.ndarray) -> str:
 
 
 def main() -> None:
-    # output = subprocess.run(
-    #     ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"%04d.bmp"],
-    #     stdout=subprocess.PIPE,
-    # )
-
-    files_paths = sorted(
-        [file_path for file_path in Path("./").rglob("*.bmp") if file_path.is_file()]
+    output = subprocess.run(
+        ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
+        stdout=subprocess.PIPE,
     )
 
-    image = resize_image("0001.bmp")
-    # convert_image_to_array(image)
-    convert_image_to_array2(image)
-    # images = [resize_image(file_name) for file_name in files_paths]
+    files_paths = sorted(
+        [
+            str(file_path)
+            for file_path in Path("./").rglob("frame_*.bmp")
+            if file_path.is_file()
+        ]
+    )
+
+    with open("raw_image.rs", "w") as f:
+        f.write("#[rustfmt::skip]\n")
+        for index, file_path in enumerate(files_paths):
+            # image = resize_image("0001.bmp")
+            image = resize_image(file_path)
+
+            # convert_image_to_array(image)
+            array = convert_image_to_array2(image, index)
+            f.write(array)
+            # images = [resize_image(file_name) for file_name in files_paths]
 
 
 if __name__ == "__main__":
