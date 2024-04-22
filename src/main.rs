@@ -190,12 +190,12 @@ fn main() -> ! {
             21 => &SKULL_FRAME21,
             22 => &SKULL_FRAME22,
             23 => &SKULL_FRAME23,
-            24 => &SKULL_FRAME24,
-            25 => &SKULL_FRAME25,
-            26 => &SKULL_FRAME26,
-            27 => &SKULL_FRAME27,
-            28 => &SKULL_FRAME28,
-            29 => &SKULL_FRAME29,
+            // 24 => &SKULL_FRAME24,
+            // 25 => &SKULL_FRAME25,
+            // 26 => &SKULL_FRAME26,
+            // 27 => &SKULL_FRAME27,
+            // 28 => &SKULL_FRAME28,
+            // 29 => &SKULL_FRAME29,
 
             _ => &SKULL_FRAME00,
         };
@@ -210,7 +210,7 @@ fn main() -> ! {
         display.draw_strips_from_buffer(&v.load_sub_array::<128>(896)).unwrap();
 
         // ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
-        arduino_hal::delay_ms(500);
+        arduino_hal::delay_ms(50);
     }
 
 
