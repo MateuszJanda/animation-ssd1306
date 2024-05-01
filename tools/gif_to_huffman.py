@@ -101,15 +101,23 @@ class Huffman:
         self._freq_map[value] += 1
 
     def compress(self) -> None:
-        min_heap = [
-            Huffman.Node(self._freq_map[i], i) for i in range(Huffman.FREQ_ARRAY_SIZE)
-        ]
+        min_heap = [Huffman.Node(freq, value) for value, freq in self._freq_map.items()]
 
         heapq.heapify(min_heap)
 
         while len(min_heap) > 1:
             node_left = heapq.heappop(min_heap)
             node_right = heapq.heappop(min_heap)
+
+            # if (node_left.value is not None):
+            #     print(f"l: {chr(node_left.value)}")
+            # else:
+            #     print("l: None")
+
+            # if (node_right.value is not None):
+            #     print(f"r: {chr(node_right.value)}")
+            # else:
+            #     print("r: None")
 
             parent = Huffman.Node(node_left.freq + node_right.freq, None)
             parent.left = node_left
@@ -149,7 +157,7 @@ def main() -> None:
         h.insert_value(ord(ch))
 
     root = h.compress()
-    print(root.right.freq)
+    print(root.freq)
 
 
 def main2() -> None:
