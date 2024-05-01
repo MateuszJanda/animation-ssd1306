@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+from collections import defaultdict
 from pathlib import Path
 import subprocess
 import cv2
 import numpy as np
+import heapq
+import typing
 
 
 GIF_NAME = "skull.gif"
@@ -71,6 +74,51 @@ def resize_image(file_name: str) -> np.ndarray:
 #     print(output)
 #     return output
 
+# https://www.geeksforgeeks.org/text-file-compression-and-decompression-using-huffman-coding/
+
+
+class Huffman:
+
+    class Node:
+        def __init__(self, freq: int, value: typing.Optional[int]) -> None:
+            self.freq = freq
+            self.value = value
+            self.left = None
+            self.right = None
+
+        def __repr__(self):
+            return f"Node freq, value: {self.freq, self.value}"
+
+        def __lt__(self, other: "Huffman.Node") -> bool:
+            return self.freq < other.freq
+
+    FREQ_ARRAY_SIZE = 256
+
+    def __init__(self) -> None:
+        self._freq_map = defaultdict(int)
+
+    def insert_value(self, value: int) -> "Huffman.Node":
+        self._freq_map[value] += 1
+
+    def compress(self) -> None:
+        min_heap = [
+            Huffman.Node(self._freq_map[i], i) for i in range(Huffman.FREQ_ARRAY_SIZE)
+        ]
+
+        heapq.heapify(min_heap)
+
+        while len(min_heap) > 1:
+            node_left = heapq.heappop(min_heap)
+            node_right = heapq.heappop(min_heap)
+
+            parent = Huffman.Node(node_left.freq + node_right.freq, None)
+            parent.left = node_left
+            parent.right = node_right
+            heapq.heappush(min_heap, parent)
+
+        root = heapq.heappop(min_heap)
+        return root
+
 
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     """Convert image (numpy array) to rust array."""
@@ -96,6 +144,15 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
 
 
 def main() -> None:
+    h = Huffman()
+    for ch in "Stressed-desserts":
+        h.insert_value(ord(ch))
+
+    root = h.compress()
+    print(root.right.freq)
+
+
+def main2() -> None:
     subprocess.run(
         ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
         stdout=subprocess.PIPE,
