@@ -131,6 +131,7 @@ class Huffman:
             heapq.heappush(min_heap, parent)
 
         root = heapq.heappop(min_heap)
+        # print(root)
         return root
 
     def _convert_binary_tree_to_array(self, root: "Huffman.Node") -> typing.List:
@@ -167,7 +168,7 @@ class Huffman:
                     bt_array[right_idx] = chr(parent.right.value)
 
             dfs(parent.left, left_idx)
-            dfs(parent.left, right_idx)
+            dfs(parent.right, right_idx)
 
         dfs(root, 1)
 
