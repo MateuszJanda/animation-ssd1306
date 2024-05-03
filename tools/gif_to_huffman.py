@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import heapq
 import typing
+import math
 
 
 GIF_NAME = "skull.gif"
@@ -74,10 +75,13 @@ def resize_image(file_name: str) -> np.ndarray:
 #     print(output)
 #     return output
 
-# https://www.geeksforgeeks.org/text-file-compression-and-decompression-using-huffman-coding/
-
 
 class HuffmanCoding:
+    """
+    - https://en.wikipedia.org/wiki/Huffman_coding
+    - https://www.geeksforgeeks.org/text-file-compression-and-decompression-using-huffman-coding/
+    """
+
     NIL = -1
     MISSING_VALUE = -2
 
@@ -94,10 +98,10 @@ class HuffmanCoding:
             return f"Node (freq: {self.freq}, value: {self.value})"
 
         def __lt__(self, other: "HuffmanCoding.Node") -> bool:
-            """Less than comparator."""
-            if self.freq == other.freq:
-                if self.value is None:
-                    return False
+            """Compare nodes by their frequencies (less than comparator)."""
+            # if self.freq == other.freq:
+            #     if self.value is None:
+            #         return False
 
             return self.freq < other.freq
 
@@ -109,30 +113,6 @@ class HuffmanCoding:
         self._root = None
         self._bt_array = None
         self._coding_table = {}
-
-    def insert_value(self, value: int) -> None:
-        """Insert value to frequency map."""
-        self._freq_map[value] += 1
-
-    def calculate_coding(self) -> None:
-        self._build_binary_tree()
-        self._convert_binary_tree_to_array()
-        self._coding_table = self._create_coding_table(self._root)
-
-    def stats(self) -> None:
-        """Print status from collected data."""
-        if self._root is None:
-            raise Exception("root doesn't exist")
-
-        # print(self._bt_array)
-        print(f"Binary tree array size: {len(self._bt_array)}")
-
-        count_bits = 0
-        for value, freq in self._freq_map.items():
-            count_bits += len(self._coding_table[value]) * freq
-            print(" %-4r |%15s" % (value, self._coding_table[value]))
-
-        print(f"Compression: {count_bits} bits, {count_bits/8:.2f} bytes.")
 
     def _build_binary_tree(self) -> "HuffmanCoding.Node":
         """Build binary tree from frequency map."""
@@ -197,7 +177,8 @@ class HuffmanCoding:
                 if parent.left.value is None:
                     self._bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    self._bt_array[left_idx] = chr(parent.left.value)
+                    # self._bt_array[left_idx] = chr(parent.left.value)
+                    self._bt_array[left_idx] = parent.left.value
                     # bt_array[left_idx] = parent.left.freq
 
             self._bt_array[right_idx] = HuffmanCoding.NIL
@@ -205,7 +186,8 @@ class HuffmanCoding:
                 if parent.right.value is None:
                     self._bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    self._bt_array[right_idx] = chr(parent.right.value)
+                    # self._bt_array[right_idx] = chr(parent.right.value)
+                    self._bt_array[right_idx] = parent.right.value
                     # bt_array[right_idx] = parent.right.freq
 
             dfs(parent.left, left_idx)
@@ -222,6 +204,33 @@ class HuffmanCoding:
         table.update(self._create_coding_table(node.left, bin_str + "0"))
         table.update(self._create_coding_table(node.right, bin_str + "1"))
         return table
+
+    def insert_value(self, value: int) -> None:
+        """Insert value to frequency map."""
+        self._freq_map[value] += 1
+
+    def calculate_coding(self) -> None:
+        self._build_binary_tree()
+        self._convert_binary_tree_to_array()
+        self._coding_table = self._create_coding_table(self._root)
+
+    def stats(self) -> None:
+        """Print status from collected data."""
+        if self._root is None:
+            raise Exception("root doesn't exist")
+
+        print(self._bt_array)
+        print(f"Binary tree array size: {len(self._bt_array)}")
+
+        count_bits = 0
+        for value, freq in self._freq_map.items():
+            count_bits += len(self._coding_table[value]) * freq
+            print(" %-4r |%15s" % (value, self._coding_table[value]))
+
+        print(f"Compression: {count_bits} bits, {count_bits/8:.2f} bytes.")
+
+    def binary_tree_array(self) -> list:
+        return self._bt_array
 
 
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
@@ -288,9 +297,9 @@ def main() -> None:
         ]
     )
 
+    # Create huffman coding for all frames
     hc = HuffmanCoding()
-
-    for index, file_path in enumerate(files_paths):
+    for file_path in files_paths:
         image = resize_image(file_path)
         array = convert_image_to_array3(image)
 
@@ -299,6 +308,44 @@ def main() -> None:
 
     hc.calculate_coding()
     hc.stats()
+
+    # Create raw_image.rs
+    with open("raw_image.rs", "w") as f:
+        rs_insert_header(f)
+        rs_insert_huffman_coding(f, hc)
+
+        rs_insert_end(f)
+
+
+def rs_insert_header(f) -> None:
+    f.write("use avr_progmem::progmem;\n\n")
+    f.write("#[rustfmt::skip]\n")
+    f.write("progmem! {\n\n")
+
+
+def rs_insert_end(f) -> None:
+    f.write("\n}\n")
+
+
+def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
+    bt_array = hc.binary_tree_array()
+    f.write(f"pub static progmem BINARY_TREE_SIZE: size = {len(bt_array)};\n")
+
+    # Bit string with leafs marked as 1 (in other case 0)
+    bit_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
+    bit_array_size = len(bit_array) // 8
+    if len(bit_array) % 8 != 0:
+        bit_array_size = len(bit_array) // 8 + 1
+        extension_size = 8 - len(bit_array) % 8
+        bit_array.extend("0" * extension_size)
+
+    f.write(f"pub static progmem BINARY_TREE_ARRAY: [u8; {bit_array_size}] = [\n")
+
+    for i in range(0, len(bit_array), 8):
+        value = int("0b" + "".join(bit_array[i : i + 8]), 2)
+        f.write(f"0x{value:02x},")
+
+    f.write("\n];\n")
 
 
 def main2() -> None:
