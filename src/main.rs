@@ -154,6 +154,7 @@ fn main() -> ! {
     //     // &SKULL_FRAME00,
     // ];
 
+    /*
     for index in (0..=23).into_iter().cycle() {
         // let aa = v[index];
 
@@ -212,7 +213,7 @@ fn main() -> ! {
         // ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
         arduino_hal::delay_ms(50);
     }
-
+*/
 
 
     //     // display.draw_strips_from_buffer(aa).unwrap();
