@@ -92,6 +92,10 @@ class HuffmanCoding:
             return f"Node freq, value: {self.freq, self.value}"
 
         def __lt__(self, other: "HuffmanCoding.Node") -> bool:
+            if self.freq == other.freq:
+                if self.value is None:
+                    return False
+
             return self.freq < other.freq
 
     # FREQ_ARRAY_SIZE = 256
@@ -106,6 +110,11 @@ class HuffmanCoding:
         root = self._build_binary_tree()
         bt_array = self._convert_binary_tree_to_array(root)
         print(bt_array)
+        print(len(bt_array))
+
+        huffman_codes = self._codes(root)
+        for ch, freq in self._freq_map.items():
+            print(" %-4r |%12s" % (chr(ch), huffman_codes[ch]))
 
     def _build_binary_tree(self) -> "HuffmanCoding.Node":
         min_heap = [
@@ -143,9 +152,13 @@ class HuffmanCoding:
         bt_array = [HuffmanCoding.NIL, HuffmanCoding.MISSING_VALUE]
         if root.value is not None:
             bt_array[1] = root.value
+            # bt_array[1] = root.freq
 
         def dfs(parent: "HuffmanCoding.Node", parent_idx: int) -> None:
             if parent is None:
+                return
+
+            if parent.left is None and parent.right is None:
                 return
 
             left_idx = 2 * parent_idx
@@ -160,14 +173,16 @@ class HuffmanCoding:
                 if parent.left.value is None:
                     bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[left_idx] = parent.left.value
+                    bt_array[left_idx] = chr(parent.left.value)
+                    # bt_array[left_idx] = parent.left.freq
 
             bt_array[right_idx] = HuffmanCoding.NIL
             if parent.right is not None:
                 if parent.right.value is None:
                     bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[right_idx] = parent.right.value
+                    bt_array[right_idx] = chr(parent.right.value)
+                    # bt_array[right_idx] = parent.right.freq
 
             dfs(parent.left, left_idx)
             dfs(parent.right, right_idx)
@@ -175,6 +190,15 @@ class HuffmanCoding:
         dfs(root, 1)
 
         return bt_array
+
+    def _codes(self, node: "HuffmanCoding.Node", bin_string=""):
+        if node.value is not None:
+            return {node.value: bin_string}
+
+        d = {}
+        d.update(self._codes(node.left, bin_string + "0"))
+        d.update(self._codes(node.right, bin_string + "1"))
+        return d
 
 
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
@@ -200,12 +224,52 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     return output
 
 
+def convert_image_to_array3(image: np.ndarray) -> typing.List:
+    """Convert image (numpy array) to array."""
+    result = []
+
+    for y in range(0, image.shape[0], 8):
+        for x in range(image.shape[1]):
+            bits = reversed(["1" if val > 0 else "0" for val in image[y : y + 8, x]])
+            value = int("0b" + "".join(bits), 2)
+            result.append(value)
+
+    return result
+
+
 def main() -> None:
     h = HuffmanCoding()
-    for ch in "Stressed-desserts":
+    # for ch in "Stressed-desserts":
+    for ch in "abcdefghi":
         h.insert_value(ord(ch))
 
     h.compress()
+
+    # # Extract frames from gif file
+    # subprocess.run(
+    #     ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
+    #     stdout=subprocess.PIPE,
+    # )
+
+    # # Create sorted list of frames files
+    # files_paths = sorted(
+    #     [
+    #         str(file_path)
+    #         for file_path in Path("./").rglob("frame_*.bmp")
+    #         if file_path.is_file()
+    #     ]
+    # )
+
+    # hc = HuffmanCoding()
+
+    # for index, file_path in enumerate(files_paths):
+    #     image = resize_image(file_path)
+    #     array = convert_image_to_array3(image)
+
+    #     for value in array:
+    #         hc.insert_value(value)
+
+    # hc.compress()
 
 
 def main2() -> None:
