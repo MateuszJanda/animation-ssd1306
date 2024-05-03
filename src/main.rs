@@ -267,10 +267,10 @@ fn main() -> ! {
     let mut value_start = 0;
     let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
 
-    let mut buf: [u8; 128] = [0; 128];
+    let mut buf = [0; 4];
     let mut buf_i = 0;
     for i in 0..frame_bits_size {
-        // ufmt::uwriteln!(&mut serial, "BUKA {}", i).unwrap();
+        ufmt::uwriteln!(&mut serial, "BUKA {}", i).unwrap();
 
         let mut frame_byte = i / 8;
         let frame_bit = i % 8;
@@ -304,20 +304,23 @@ fn main() -> ! {
             let mut hi: usize = BINARY_TREE_LEAFS_TO_INDEXES.len() - 1;
             let mut mi: usize = (hi - lo) / 2 + lo;
 
+            let search_code = current_index - 2;
+            ufmt::uwriteln!(&mut serial, "BUKA search_code {}", search_code).unwrap();
             while lo <= hi {
                 mi = (hi - lo) / 2 + lo;
                 // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
-                if current_index == BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
+                if search_code == BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
                     break;
-                } else if current_index < BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
+                } else if search_code < BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
                     hi = mi - 1;
                 } else {
                     lo = mi + 1;
                 }
             }
+            // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
-            let mut mi_byte: usize = mi / 8;
+            let mut mi_byte: usize = mi;
             if mi_byte < value_start || mi_byte - value_start >= 128 {
                 value_start = (mi_byte / 128) * 128;
                 value = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
@@ -325,12 +328,13 @@ fn main() -> ! {
             }
 
             buf[buf_i] = value[mi_byte];
+            ufmt::uwriteln!(&mut serial, "BUKA mi {}, mi_byte {}, value 0x{:x} ", mi, mi_byte, value[mi_byte]).unwrap();
             current_index = 1;
 
             // let mi_byte =BINARY_TREE_INDEXES_TO_VALUES
 
             buf_i += 1;
-            if buf_i == 128 {
+            if buf_i == buf.len() {
                 display.draw_strips_from_buffer(&buf).unwrap();
                 buf_i = 0;
             }
