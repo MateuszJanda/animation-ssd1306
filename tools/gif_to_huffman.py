@@ -317,6 +317,10 @@ def main() -> None:
         rs_insert_header(f)
         rs_insert_huffman_coding(f, hc)
 
+        for index, file_path in enumerate(files_paths):
+            image = resize_image(file_path)
+            rs_insert_frame(f, hc, image, index)
+
         rs_insert_end(f)
 
 
@@ -332,20 +336,20 @@ def rs_insert_end(f) -> None:
 
 def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
     bt_array = hc.get_binary_tree_array()
-    f.write(f"pub static progmem BINARY_TREE_SIZE: size = {len(bt_array)};\n")
+    f.write(
+        f"pub static progmem BINARY_TREE_LEAFS_BITS_SIZE: size = {len(bt_array)};\n"
+    )
 
     # Extend bit array if the size is not a multiple of 8
-    bit_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
-    bit_array_size = len(bit_array) // 8
-    if len(bit_array) % 8 != 0:
-        bit_array_size = len(bit_array) // 8 + 1
-        extension_size = 8 - len(bit_array) % 8
-        bit_array.extend("0" * extension_size)
+    bits_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
+    if len(bits_array) % 8 != 0:
+        extension_size = 8 - len(bits_array) % 8
+        bits_array.extend("0" * extension_size)
 
     # Insert bit array with leafs marked as 1 (0 in other case)
-    f.write(f"pub static progmem BINARY_TREE_BITS_LEAFS: [u8; {bit_array_size}] = [\n")
-    for i in range(0, len(bit_array), 8):
-        value = int("0b" + "".join(bit_array[i : i + 8]), 2)
+    f.write(f"pub static progmem BINARY_TREE_LEAFS: [u8; {len(bits_array) // 8}] = [\n")
+    for i in range(0, len(bits_array), 8):
+        value = int("0b" + "".join(bits_array[i : i + 8]), 2)
         f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
@@ -366,6 +370,28 @@ def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
         f"pub static progmem BINARY_TREE_INDEXES_TO_VALUES: [u8; {len(code_to_value)}] = [\n"
     )
     for _, value in code_to_value:
+        f.write(f"0x{value:02x},")
+    f.write("\n];\n")
+
+
+def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None:
+    coding_table = hc.get_huffman_coding()
+    array = convert_image_to_array3(image)
+
+    bits_str = "".join(coding_table[value] for value in array)
+    f.write(
+        f"pub static progmem SKULL_FRAME{index:02d}_BITS_SIZE: size = {len(bits_str)};\n"
+    )
+
+    if len(bits_str) % 8 != 0:
+        extension_size = 8 - len(bits_str) % 8
+        bits_str += "0" * extension_size
+
+    f.write(
+        f"pub static progmem SKULL_FRAME{index:02d}: [u8; {len(bits_str) // 8}] = [\n"
+    )
+    for i in range(0, len(bits_str), 8):
+        value = int("0b" + "".join(bits_str[i : i + 8]), 2)
         f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
