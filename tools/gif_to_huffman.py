@@ -229,8 +229,11 @@ class HuffmanCoding:
 
         print(f"Compression: {count_bits} bits, {count_bits/8:.2f} bytes.")
 
-    def binary_tree_array(self) -> list:
+    def get_binary_tree_array(self) -> list:
         return self._bt_array
+
+    def get_huffman_coding(self) -> dict:
+        return self._coding_table
 
 
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
@@ -328,10 +331,10 @@ def rs_insert_end(f) -> None:
 
 
 def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
-    bt_array = hc.binary_tree_array()
+    bt_array = hc.get_binary_tree_array()
     f.write(f"pub static progmem BINARY_TREE_SIZE: size = {len(bt_array)};\n")
 
-    # Bit string with leafs marked as 1 (in other case 0)
+    # Extend bit array if the size is not a multiple of 8
     bit_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
     bit_array_size = len(bit_array) // 8
     if len(bit_array) % 8 != 0:
@@ -339,12 +342,31 @@ def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
         extension_size = 8 - len(bit_array) % 8
         bit_array.extend("0" * extension_size)
 
-    f.write(f"pub static progmem BINARY_TREE_ARRAY: [u8; {bit_array_size}] = [\n")
-
+    # Insert bit array with leafs marked as 1 (0 in other case)
+    f.write(f"pub static progmem BINARY_TREE_BITS_LEAFS: [u8; {bit_array_size}] = [\n")
     for i in range(0, len(bit_array), 8):
         value = int("0b" + "".join(bit_array[i : i + 8]), 2)
         f.write(f"0x{value:02x},")
+    f.write("\n];\n")
 
+    # Insert binary tree codes in ascending order
+    coding_table = hc.get_huffman_coding()
+    code_to_value = sorted(
+        [(int(f"0b{code}", 2), value) for value, code in coding_table.items()]
+    )
+    f.write(
+        f"pub static progmem BINARY_TREE_LEAFS_TO_INDEXES: [u16; {len(code_to_value)}] = [\n"
+    )
+    for code, _ in code_to_value:
+        f.write(f"0x{code:04x},")
+    f.write("\n];\n")
+
+    # Insert binary tree values
+    f.write(
+        f"pub static progmem BINARY_TREE_INDEXES_TO_VALUES: [u8; {len(code_to_value)}] = [\n"
+    )
+    for _, value in code_to_value:
+        f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
 
