@@ -83,15 +83,18 @@ class HuffmanCoding:
 
     class Node:
         def __init__(self, freq: int, value: typing.Optional[int]) -> None:
+            """Node in binary tree."""
             self.freq = freq
             self.value = value
             self.left = None
             self.right = None
 
-        def __repr__(self):
-            return f"Node freq, value: {self.freq, self.value}"
+        def __repr__(self) -> str:
+            """Description."""
+            return f"Node (freq: {self.freq}, value: {self.value})"
 
         def __lt__(self, other: "HuffmanCoding.Node") -> bool:
+            """Less than comparator."""
             if self.freq == other.freq:
                 if self.value is None:
                     return False
@@ -101,34 +104,38 @@ class HuffmanCoding:
     # FREQ_ARRAY_SIZE = 256
 
     def __init__(self) -> None:
+        """Init Huffman coding fields."""
         self._freq_map = defaultdict(int)
         self._root = None
+        self._bt_array = None
+        self._coding_table = {}
 
     def insert_value(self, value: int) -> None:
+        """Insert value to frequency map."""
         self._freq_map[value] += 1
 
-    def compress(self) -> None:
-        self._root = self._build_binary_tree()
-        bt_array = self._convert_binary_tree_to_array(self._root)
-        print(bt_array)
-        print(len(bt_array))
-
-        huffman_codes = self._codes(self._root)
-        for ch, freq in self._freq_map.items():
-            print(" %-4r |%15s" % (ch, huffman_codes[ch]))
+    def calculate_coding(self) -> None:
+        self._build_binary_tree()
+        self._convert_binary_tree_to_array()
+        self._coding_table = self._create_coding_table(self._root)
 
     def stats(self) -> None:
+        """Print status from collected data."""
         if self._root is None:
             raise Exception("root doesn't exist")
 
-        count_bits = 0
-        huffman_codes = self._codes(self._root)
-        for value, freq in self._freq_map.items():
-            count_bits += len(huffman_codes[value]) * freq
+        # print(self._bt_array)
+        print(f"Binary tree array size: {len(self._bt_array)}")
 
-        print(f"{count_bits} bits, {count_bits/8:.2f} bytes")
+        count_bits = 0
+        for value, freq in self._freq_map.items():
+            count_bits += len(self._coding_table[value]) * freq
+            print(" %-4r |%15s" % (value, self._coding_table[value]))
+
+        print(f"Compression: {count_bits} bits, {count_bits/8:.2f} bytes.")
 
     def _build_binary_tree(self) -> "HuffmanCoding.Node":
+        """Build binary tree from frequency map."""
         min_heap = [
             HuffmanCoding.Node(freq, value) for value, freq in self._freq_map.items()
         ]
@@ -153,20 +160,25 @@ class HuffmanCoding:
             parent.right = node_right
             heapq.heappush(min_heap, parent)
 
-        root = heapq.heappop(min_heap)
+        self._root = heapq.heappop(min_heap)
         # print(root)
-        return root
+        # return root
 
-    def _convert_binary_tree_to_array(self, root: "HuffmanCoding.Node") -> typing.List:
-        if root is None:
+    def _convert_binary_tree_to_array(self) -> list:
+        """Convert binary tree to array."""
+        if self._root is None:
             raise Exception("root is None")
 
-        bt_array = [HuffmanCoding.NIL, HuffmanCoding.MISSING_VALUE]
-        if root.value is not None:
-            bt_array[1] = root.value
+        self._bt_array = [HuffmanCoding.NIL, HuffmanCoding.MISSING_VALUE]
+        if self._root.value is not None:
+            self._bt_array[1] = self._root.value
             # bt_array[1] = root.freq
 
         def dfs(parent: "HuffmanCoding.Node", parent_idx: int) -> None:
+            """
+            Process all nodes (using recursive DFS - depth-first search algorithm) and fill
+            binary tree array.
+            """
             if parent is None:
                 return
 
@@ -176,41 +188,40 @@ class HuffmanCoding:
             left_idx = 2 * parent_idx
             right_idx = 2 * parent_idx + 1
 
-            if len(bt_array) <= right_idx:
-                additional_len = right_idx - len(bt_array) + 1
-                bt_array.extend([HuffmanCoding.NIL] * additional_len)
+            if len(self._bt_array) <= right_idx:
+                additional_len = right_idx - len(self._bt_array) + 1
+                self._bt_array.extend([HuffmanCoding.NIL] * additional_len)
 
-            bt_array[left_idx] = HuffmanCoding.NIL
+            self._bt_array[left_idx] = HuffmanCoding.NIL
             if parent.left is not None:
                 if parent.left.value is None:
-                    bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
+                    self._bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[left_idx] = chr(parent.left.value)
+                    self._bt_array[left_idx] = chr(parent.left.value)
                     # bt_array[left_idx] = parent.left.freq
 
-            bt_array[right_idx] = HuffmanCoding.NIL
+            self._bt_array[right_idx] = HuffmanCoding.NIL
             if parent.right is not None:
                 if parent.right.value is None:
-                    bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
+                    self._bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[right_idx] = chr(parent.right.value)
+                    self._bt_array[right_idx] = chr(parent.right.value)
                     # bt_array[right_idx] = parent.right.freq
 
             dfs(parent.left, left_idx)
             dfs(parent.right, right_idx)
 
-        dfs(root, 1)
+        dfs(self._root, 1)
 
-        return bt_array
-
-    def _codes(self, node: "HuffmanCoding.Node", bin_string=""):
+    def _create_coding_table(self, node: "HuffmanCoding.Node", bin_str="") -> dict:
+        """Create coding table by traversing binary tree in recursive manner."""
         if node.value is not None:
-            return {node.value: bin_string}
+            return {node.value: bin_str}
 
-        d = {}
-        d.update(self._codes(node.left, bin_string + "0"))
-        d.update(self._codes(node.right, bin_string + "1"))
-        return d
+        table = {}
+        table.update(self._create_coding_table(node.left, bin_str + "0"))
+        table.update(self._create_coding_table(node.right, bin_str + "1"))
+        return table
 
 
 def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
@@ -236,7 +247,7 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     return output
 
 
-def convert_image_to_array3(image: np.ndarray) -> typing.List:
+def convert_image_to_array3(image: np.ndarray) -> list:
     """Convert image (numpy array) to array."""
     result = []
 
@@ -259,7 +270,7 @@ def main() -> None:
     #     h.insert_value(ord(ch))
     #     # h.insert_value(ch)
 
-    # h.compress()
+    # h.calculate_coding()
     # h.stats()
 
     # Extract frames from gif file
@@ -286,7 +297,7 @@ def main() -> None:
         for value in array:
             hc.insert_value(value)
 
-    hc.compress()
+    hc.calculate_coding()
     hc.stats()
 
 
