@@ -102,19 +102,31 @@ class HuffmanCoding:
 
     def __init__(self) -> None:
         self._freq_map = defaultdict(int)
+        self._root = None
 
     def insert_value(self, value: int) -> None:
         self._freq_map[value] += 1
 
     def compress(self) -> None:
-        root = self._build_binary_tree()
-        bt_array = self._convert_binary_tree_to_array(root)
+        self._root = self._build_binary_tree()
+        bt_array = self._convert_binary_tree_to_array(self._root)
         print(bt_array)
         print(len(bt_array))
 
-        huffman_codes = self._codes(root)
+        huffman_codes = self._codes(self._root)
         for ch, freq in self._freq_map.items():
-            print(" %-4r |%12s" % (chr(ch), huffman_codes[ch]))
+            print(" %-4r |%15s" % (ch, huffman_codes[ch]))
+
+    def stats(self) -> None:
+        if self._root is None:
+            raise Exception("root doesn't exist")
+
+        count_bits = 0
+        huffman_codes = self._codes(self._root)
+        for value, freq in self._freq_map.items():
+            count_bits += len(huffman_codes[value]) * freq
+
+        print(f"{count_bits} bits, {count_bits/8:.2f} bytes")
 
     def _build_binary_tree(self) -> "HuffmanCoding.Node":
         min_heap = [
@@ -238,38 +250,44 @@ def convert_image_to_array3(image: np.ndarray) -> typing.List:
 
 
 def main() -> None:
-    h = HuffmanCoding()
-    # for ch in "Stressed-desserts":
-    for ch in "abcdefghi":
-        h.insert_value(ord(ch))
+    # h = HuffmanCoding()
+    # # for ch in "Stressed-desserts":
+    # # for ch in "abcdefghi":
+    # # for ch in [x for x in range(256)]:
+    # # for ch in "Today_is_Monday":
+    # for ch in "aaaaaabcdefgh":
+    #     h.insert_value(ord(ch))
+    #     # h.insert_value(ch)
 
-    h.compress()
+    # h.compress()
+    # h.stats()
 
-    # # Extract frames from gif file
-    # subprocess.run(
-    #     ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
-    #     stdout=subprocess.PIPE,
-    # )
+    # Extract frames from gif file
+    subprocess.run(
+        ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
+        stdout=subprocess.PIPE,
+    )
 
-    # # Create sorted list of frames files
-    # files_paths = sorted(
-    #     [
-    #         str(file_path)
-    #         for file_path in Path("./").rglob("frame_*.bmp")
-    #         if file_path.is_file()
-    #     ]
-    # )
+    # Create sorted list of frames files
+    files_paths = sorted(
+        [
+            str(file_path)
+            for file_path in Path("./").rglob("frame_*.bmp")
+            if file_path.is_file()
+        ]
+    )
 
-    # hc = HuffmanCoding()
+    hc = HuffmanCoding()
 
-    # for index, file_path in enumerate(files_paths):
-    #     image = resize_image(file_path)
-    #     array = convert_image_to_array3(image)
+    for index, file_path in enumerate(files_paths):
+        image = resize_image(file_path)
+        array = convert_image_to_array3(image)
 
-    #     for value in array:
-    #         hc.insert_value(value)
+        for value in array:
+            hc.insert_value(value)
 
-    # hc.compress()
+    hc.compress()
+    hc.stats()
 
 
 def main2() -> None:
