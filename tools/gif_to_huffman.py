@@ -222,6 +222,7 @@ class HuffmanCoding:
         print(self._bt_array)
         print(f"Binary tree array size: {len(self._bt_array)}")
 
+        print("Huffman codes. Values -> Code:")
         count_bits = 0
         for value, freq in self._freq_map.items():
             count_bits += len(self._coding_table[value]) * freq
