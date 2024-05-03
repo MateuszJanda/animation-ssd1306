@@ -108,7 +108,9 @@ class HuffmanCoding:
         print(bt_array)
 
     def _build_binary_tree(self) -> "HuffmanCoding.Node":
-        min_heap = [HuffmanCoding.Node(freq, value) for value, freq in self._freq_map.items()]
+        min_heap = [
+            HuffmanCoding.Node(freq, value) for value, freq in self._freq_map.items()
+        ]
         heapq.heapify(min_heap)
 
         while len(min_heap) > 1:
