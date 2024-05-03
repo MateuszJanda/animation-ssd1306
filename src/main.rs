@@ -243,13 +243,17 @@ fn main() -> ! {
 
     display.setup().unwrap();
 
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(0)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(128)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(256)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(384)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(512)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(640)).unwrap();
-    display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(896)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(0)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(128)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(256)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(384)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(512)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(640)).unwrap();
+    // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(896)).unwrap();
+
+
+    // ----
+
 
     // let data = &SKULL_FRAME00.load_sub_array::<128>(0);
     // display.draw_strips_from_buffer(data).unwrap();

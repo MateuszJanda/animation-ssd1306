@@ -338,7 +338,7 @@ def rs_insert_end(f) -> None:
 def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
     bt_array = hc.get_binary_tree_array()
     f.write(
-        f"pub static progmem BINARY_TREE_LEAFS_BITS_SIZE: size = {len(bt_array)};\n"
+        f"pub static progmem BINARY_TREE_LEAFS_BITS_SIZE: u16 = {len(bt_array)};\n"
     )
 
     # Extend bit array if the size is not a multiple of 8
@@ -381,7 +381,7 @@ def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None
 
     bits_str = "".join(coding_table[value] for value in array)
     f.write(
-        f"pub static progmem SKULL_FRAME{index:02d}_BITS_SIZE: size = {len(bits_str)};\n"
+        f"pub static progmem SKULL_FRAME{index:02d}_BITS_SIZE: u16 = {len(bits_str)};\n"
     )
 
     if len(bits_str) % 8 != 0:
