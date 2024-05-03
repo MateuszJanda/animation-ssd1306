@@ -77,7 +77,7 @@ def resize_image(file_name: str) -> np.ndarray:
 # https://www.geeksforgeeks.org/text-file-compression-and-decompression-using-huffman-coding/
 
 
-class Huffman:
+class HuffmanCoding:
     NIL = -1
     MISSING_VALUE = -2
 
@@ -91,7 +91,7 @@ class Huffman:
         def __repr__(self):
             return f"Node freq, value: {self.freq, self.value}"
 
-        def __lt__(self, other: "Huffman.Node") -> bool:
+        def __lt__(self, other: "HuffmanCoding.Node") -> bool:
             return self.freq < other.freq
 
     # FREQ_ARRAY_SIZE = 256
@@ -107,8 +107,8 @@ class Huffman:
         bt_array = self._convert_binary_tree_to_array(root)
         print(bt_array)
 
-    def _build_binary_tree(self) -> "Huffman.Node":
-        min_heap = [Huffman.Node(freq, value) for value, freq in self._freq_map.items()]
+    def _build_binary_tree(self) -> "HuffmanCoding.Node":
+        min_heap = [HuffmanCoding.Node(freq, value) for value, freq in self._freq_map.items()]
         heapq.heapify(min_heap)
 
         while len(min_heap) > 1:
@@ -125,7 +125,7 @@ class Huffman:
             # else:
             #     print("r: None")
 
-            parent = Huffman.Node(node_left.freq + node_right.freq, None)
+            parent = HuffmanCoding.Node(node_left.freq + node_right.freq, None)
             parent.left = node_left
             parent.right = node_right
             heapq.heappush(min_heap, parent)
@@ -134,15 +134,15 @@ class Huffman:
         # print(root)
         return root
 
-    def _convert_binary_tree_to_array(self, root: "Huffman.Node") -> typing.List:
+    def _convert_binary_tree_to_array(self, root: "HuffmanCoding.Node") -> typing.List:
         if root is None:
             raise Exception("root is None")
 
-        bt_array = [Huffman.NIL, Huffman.MISSING_VALUE]
+        bt_array = [HuffmanCoding.NIL, HuffmanCoding.MISSING_VALUE]
         if root.value is not None:
             bt_array[1] = root.value
 
-        def dfs(parent: "Huffman.Node", parent_idx: int) -> None:
+        def dfs(parent: "HuffmanCoding.Node", parent_idx: int) -> None:
             if parent is None:
                 return
 
@@ -151,21 +151,21 @@ class Huffman:
 
             if len(bt_array) <= right_idx:
                 additional_len = right_idx - len(bt_array) + 1
-                bt_array.extend([Huffman.NIL] * additional_len)
+                bt_array.extend([HuffmanCoding.NIL] * additional_len)
 
-            bt_array[left_idx] = Huffman.NIL
+            bt_array[left_idx] = HuffmanCoding.NIL
             if parent.left is not None:
                 if parent.left.value is None:
-                    bt_array[left_idx] = Huffman.MISSING_VALUE
+                    bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[left_idx] = chr(parent.left.value)
+                    bt_array[left_idx] = parent.left.value
 
-            bt_array[right_idx] = Huffman.NIL
+            bt_array[right_idx] = HuffmanCoding.NIL
             if parent.right is not None:
                 if parent.right.value is None:
-                    bt_array[right_idx] = Huffman.MISSING_VALUE
+                    bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    bt_array[right_idx] = chr(parent.right.value)
+                    bt_array[right_idx] = parent.right.value
 
             dfs(parent.left, left_idx)
             dfs(parent.right, right_idx)
@@ -199,7 +199,7 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
 
 
 def main() -> None:
-    h = Huffman()
+    h = HuffmanCoding()
     for ch in "Stressed-desserts":
         h.insert_value(ord(ch))
 
