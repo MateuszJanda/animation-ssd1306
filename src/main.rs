@@ -294,7 +294,9 @@ fn main() -> ! {
         };
 
         // display.setup().unwrap();
-        frame_decoder.setup();
+
+        // TODO: Is needed??
+        // frame_decoder.setup();
         frame_decoder.decode(frame_bits_size, frame_array);
         // display.draw_strips_from_buffer(&v.load_sub_array::<128>(0)).unwrap();
         // display.draw_strips_from_buffer(&v.load_sub_array::<128>(128)).unwrap();
