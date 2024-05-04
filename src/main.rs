@@ -314,7 +314,7 @@ fn main() -> ! {
             // is leaf
 
             let mut lo: usize = 0;
-            let mut hi: usize = BINARY_TREE_LEAFS_TO_INDEXES.len() - 1;
+            let mut hi: usize = BINARY_TREE_CODES.len() - 1;
             let mut mi: usize = (hi - lo) / 2 + lo;
 
             // let search_code = current_index - 2;
@@ -324,9 +324,9 @@ fn main() -> ! {
                 mi = (hi - lo) / 2 + lo;
                 // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
-                if search_code == BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
+                if search_code == BINARY_TREE_CODES[mi] as usize {
                     break;
-                } else if search_code < BINARY_TREE_LEAFS_TO_INDEXES[mi] as usize {
+                } else if search_code < BINARY_TREE_CODES[mi] as usize {
                     hi = mi - 1;
                 } else {
                     lo = mi + 1;
@@ -341,7 +341,7 @@ fn main() -> ! {
             //     mi_byte = mi_byte % 128;
             // }
 
-            buf[buf_i] = BINARY_TREE_INDEXES_TO_VALUES[mi];
+            buf[buf_i] = BINARY_TREE_VALUES[mi];
             ufmt::uwriteln!(&mut serial, "BUKA mi {}, value 0x{:x} ", mi, buf[buf_i]).unwrap();
             current_index = 1;
             current_code = 0;

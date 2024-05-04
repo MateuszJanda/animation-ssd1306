@@ -317,8 +317,8 @@ def main() -> None:
     # h.stats()
 
 
-    show_codes()
-    return
+    # show_codes()
+    # return
 
     # Extract frames from gif file
     subprocess.run(
@@ -382,7 +382,7 @@ def rs_insert_huffman_indexes_and_values(f, hc: HuffmanCoding) -> None:
         [(int(f"0b{code}", 2), value) for value, code in coding_table.items()]
     )
     f.write(
-        f"pub static BINARY_TREE_LEAFS_TO_INDEXES: [u16; {len(code_to_value)}] = [\n"
+        f"pub static BINARY_TREE_CODES: [u16; {len(code_to_value)}] = [\n"
     )
     for code, _ in code_to_value:
         f.write(f"0x{code:04x},")
@@ -390,7 +390,7 @@ def rs_insert_huffman_indexes_and_values(f, hc: HuffmanCoding) -> None:
 
     # Insert binary tree values
     f.write(
-        f"pub static BINARY_TREE_INDEXES_TO_VALUES: [u8; {len(code_to_value)}] = [\n"
+        f"pub static BINARY_TREE_VALUES: [u8; {len(code_to_value)}] = [\n"
     )
     for _, value in code_to_value:
         f.write(f"0x{value:02x},")
