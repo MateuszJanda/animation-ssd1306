@@ -2,8 +2,8 @@
 #![no_main]
 
 use animation_ssd1306::encoded_frames::*;
-use animation_ssd1306::driver_wrapper::MyType;
-use animation_ssd1306::driver_wrapper::NonBufferedMode;
+use animation_ssd1306::driver_wrapper::Ssd1306DriverWrapper;
+use animation_ssd1306::driver_wrapper::MinBufferMode;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 use avr_progmem::wrapper::ProgMem;
@@ -19,7 +19,7 @@ where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
-    display: MyType<'a, DI, SIZE>,
+    display: Ssd1306DriverWrapper<'a, DI, SIZE>,
 }
 
 impl<'a, DI, SIZE> HuffmanFrameDecoder<'a, DI, SIZE>
@@ -27,7 +27,7 @@ where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
-    pub fn new(display: MyType<'a, DI, SIZE>) -> Self {
+    pub fn new(display: Ssd1306DriverWrapper<'a, DI, SIZE>) -> Self {
         Self { display }
     }
 
@@ -195,7 +195,7 @@ fn main() -> ! {
     // };
 
     // let mode = NonBufferedMode::new();
-    // let mut display = MyType(Ssd1306::new(
+    // let mut display = Ssd1306DriverWrapper(Ssd1306::new(
     //     interface,
     //     DisplaySize128x64,
     //     DisplayRotation::Rotate180,
@@ -208,8 +208,8 @@ fn main() -> ! {
     let mut print_debug = |text: &str, num: i32| -> () {};
     // let mut print_str = || -> () { 1337; };
 
-    let mode = NonBufferedMode::new(&mut print_debug);
-    let mut display = MyType::new(
+    let mode = MinBufferMode::new(&mut print_debug);
+    let mut display = Ssd1306DriverWrapper::new(
         Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180),
         mode,
     );

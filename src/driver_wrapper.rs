@@ -1,30 +1,25 @@
 //! Non buffered graphics mode.
 
+use core::ops::{Deref, DerefMut};
+use display_interface::DataFormat::U8;
 use display_interface::DisplayError;
+use ssd1306::prelude::WriteOnlyDataCommand;
 use ssd1306::{
     command::AddrMode, mode::BasicMode, mode::DisplayConfig, rotation::DisplayRotation,
     size::DisplaySize, Ssd1306,
 };
-
-use display_interface::DataFormat::U8;
-
-use core::ops::{Deref, DerefMut};
-
-use ssd1306::prelude::WriteOnlyDataCommand;
-
-// use arduino_hal::spi;
-// use arduino_hal::Delay;
-// use arduino_hal::Usart;
-// // use arduino_hal::Atmega;
-// use arduino_hal::clock::MHz16;
-// use arduino_hal::pac::USART0;
-// use arduino_hal::port::mode::Input;
-// use arduino_hal::port::mode::Output;
-// use arduino_hal::port::Pin;
+// #[cfg(feature = "graphics")]
+use embedded_graphics_core::{
+    draw_target::DrawTarget,
+    geometry::Size,
+    geometry::{Dimensions, OriginDimensions},
+    pixelcolor::BinaryColor,
+    Pixel,
+};
 
 // #[derive(Clone, Debug)]
 // #[derive(Clone)]
-pub struct NonBufferedMode<'a>
+pub struct MinBufferMode<'a>
 // where
 // SIZE: DisplaySize,
 {
@@ -39,8 +34,8 @@ pub struct NonBufferedMode<'a>
     print_debug: &'a mut dyn FnMut(&str, i32) -> (),
 }
 
-// impl<SIZE> NonBufferedMode<SIZE>
-impl<'a> NonBufferedMode<'a>
+// impl<SIZE> MinBufferMode<SIZE>
+impl<'a> MinBufferMode<'a>
 // where
 // SIZE: DisplaySize,
 {
@@ -75,7 +70,7 @@ impl<'a> NonBufferedMode<'a>
     // }
 }
 
-// impl<DI, SIZE> DisplayConfig for Ssd1306<DI, SIZE, NonBufferedMode<SIZE>>
+// impl<DI, SIZE> DisplayConfig for Ssd1306<DI, SIZE, MinBufferMode<SIZE>>
 // where
 //     DI: WriteOnlyDataCommand,
 //     SIZE: DisplaySize,
@@ -96,34 +91,25 @@ impl<'a> NonBufferedMode<'a>
 //     }
 // }
 
-// #[cfg(feature = "graphics")]
-use embedded_graphics_core::{
-    draw_target::DrawTarget,
-    geometry::Size,
-    geometry::{Dimensions, OriginDimensions},
-    pixelcolor::BinaryColor,
-    Pixel,
-};
+// pub struct Ssd1306DriverWrapper<DI, SIZE>(pub Ssd1306<DI, SIZE, BasicMode>);
 
-// pub struct MyType<DI, SIZE>(pub Ssd1306<DI, SIZE, BasicMode>);
-
-// type Target<'a> = Ssd1306<DI, SIZE, NonBufferedMode<'a>>;
-pub struct MyType<'a, DI, SIZE>(pub Ssd1306<DI, SIZE, NonBufferedMode<'a>>);
+// type Target<'a> = Ssd1306<DI, SIZE, MinBufferMode<'a>>;
+pub struct Ssd1306DriverWrapper<'a, DI, SIZE>(pub Ssd1306<DI, SIZE, MinBufferMode<'a>>);
 // where
 //     DI: WriteOnlyDataCommand,
 //     SIZE: DisplaySize;
 
-impl<'a, DI, SIZE> MyType<'a, DI, SIZE>
+impl<'a, DI, SIZE> Ssd1306DriverWrapper<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
-    // pub fn into_mode(self, mode: NonBufferedMode) -> Self {
-    //     MyType(self.0.into_mode(mode))
+    // pub fn into_mode(self, mode: MinBufferMode) -> Self {
+    //     Ssd1306DriverWrapper(self.0.into_mode(mode))
     // }
 
-    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: NonBufferedMode<'a>) -> Self {
-        MyType(ssd.into_mode(mode))
+    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: MinBufferMode<'a>) -> Self {
+        Ssd1306DriverWrapper(ssd.into_mode(mode))
     }
 
     fn clear_impl(&mut self, value: bool) {
@@ -418,7 +404,7 @@ where
                 (self.mode_mut().print_debug)("Flush end.x", (disp_max_x + offset_x) as i32);
                 (self.mode_mut().print_debug)("Flush end.y", (disp_max_y + SIZE::OFFSETY) as i32);
 
-                // Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
+                // Ssd1306::<DI, SIZE, MinBufferMode>::flush_buffer_chunks(
                 //     &mut self.interface_mut(),
                 //     &byte_buffer,
                 //     width as usize,
@@ -435,7 +421,7 @@ where
                     (disp_max_y + offset_x, disp_max_x + SIZE::OFFSETY),
                 )?;
 
-                Ssd1306::<DI, SIZE, NonBufferedMode>::flush_buffer_chunks(
+                Ssd1306::<DI, SIZE, MinBufferMode>::flush_buffer_chunks(
                     &mut self.interface_mut(),
                     &byte_buffer,
                     height as usize,
@@ -447,7 +433,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> DrawTarget for MyType<'a, DI, SIZE>
+impl<'a, DI, SIZE> DrawTarget for Ssd1306DriverWrapper<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -477,7 +463,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> OriginDimensions for MyType<'a, DI, SIZE>
+impl<'a, DI, SIZE> OriginDimensions for Ssd1306DriverWrapper<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -489,7 +475,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> DisplayConfig for MyType<'a, DI, SIZE>
+impl<'a, DI, SIZE> DisplayConfig for Ssd1306DriverWrapper<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -503,23 +489,23 @@ where
         self.0.set_rotation(rot)
     }
 
-    /// Initialise and clear the display in graphics mode.
+    /// Initialize and clear the display in graphics mode.
     fn init(&mut self) -> Result<(), DisplayError> {
-        (self.mode_mut().print_debug)("MyType init", 0);
+        (self.mode_mut().print_debug)("Ssd1306DriverWrapper init", 0);
         self.clear_impl(false);
         self.init_with_addr_mode(AddrMode::Horizontal)
     }
 }
 
-impl<'a, DI, SIZE> Deref for MyType<'a, DI, SIZE> {
-    type Target = Ssd1306<DI, SIZE, NonBufferedMode<'a>>;
+impl<'a, DI, SIZE> Deref for Ssd1306DriverWrapper<'a, DI, SIZE> {
+    type Target = Ssd1306<DI, SIZE, MinBufferMode<'a>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<'a, DI, SIZE> DerefMut for MyType<'a, DI, SIZE> {
+impl<'a, DI, SIZE> DerefMut for Ssd1306DriverWrapper<'a, DI, SIZE> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
