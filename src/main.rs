@@ -273,16 +273,18 @@ fn main() -> ! {
     for i in 0..frame_bits_size {
         // ufmt::uwriteln!(&mut serial, "BUKA i: {}, buf_i: {}, current_index: {}", i, buf_i, current_index).unwrap();
 
-        let mut frame_byte = i / 8;
-        let frame_bit = i % 8;
+        let frame_byte = i / 8;
+        // let frame_bit = i % 8;
 
         if frame_byte - frame_start >= 128 {
             frame_start = (frame_byte / 128) * 128;
             frame = SKULL_FRAME02.load_sub_array::<128>(frame_start);
-            frame_byte = frame_byte % 128;
         }
 
-        if frame[frame_byte] & (0b1000_0000 >> frame_bit) != 0 {
+        let sub_frame_byte = frame_byte % 128;
+        let sub_frame_bit = i % 8;
+
+        if frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0 {
             current_index = 2 * current_index + 1;
             current_code = current_code << 1 | 1;
         } else {
@@ -297,20 +299,29 @@ fn main() -> ! {
             buf_i,
             current_index,
             current_code,
-            frame[frame_byte] & (0b1000_0000 >> frame_bit) != 0
+            frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0
         )
         .unwrap();
 
-        let mut bt_byte = current_index / 8;
-        let bt_bit = current_index % 8;
+        let bt_byte = current_index / 8;
 
-        if bt_byte - bt_start >= 128 {
+        ufmt::uwriteln!(
+            &mut serial,
+            "BUKA b bt_byte:{} bt_start:{}",
+            bt_byte,
+            bt_start
+        )
+        .unwrap();
+        serial.flush();
+
+        if bt_byte < bt_start || bt_byte - bt_start >= 128 {
             bt_start = (bt_byte / 128) * 128;
             bt = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
-            bt_byte = bt_byte % 128;
         }
+        let sub_bt_byte = bt_byte % 128;
+        let sub_bt_bit = current_index % 8;
 
-        if bt[bt_byte] & (0b1000_0000 >> bt_bit) != 0 {
+        if bt[sub_bt_byte] & (0b1000_0000 >> sub_bt_bit) != 0 {
             // is leaf
 
             let mut lo: usize = 0;
@@ -318,21 +329,22 @@ fn main() -> ! {
             let mut mi: usize = (hi - lo) / 2 + lo;
 
             // let search_code = current_index - 2;
-            let search_code = current_code;
-            ufmt::uwriteln!(&mut serial, "BUKA search_code 0x{:04x}", search_code).unwrap();
+            // let search_code = current_code;
+            ufmt::uwriteln!(&mut serial, "BUKA current_code 0x{:04x}", current_code).unwrap();
             while lo <= hi {
                 mi = (hi - lo) / 2 + lo;
                 // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
-                if search_code == BINARY_TREE_CODES[mi] as usize {
+                if current_code == BINARY_TREE_CODES[mi] as usize {
+                    ufmt::uwriteln!(&mut serial, "BUKA break mi: {}", mi).unwrap();
                     break;
-                } else if search_code < BINARY_TREE_CODES[mi] as usize {
+                } else if current_code < BINARY_TREE_CODES[mi] as usize {
                     hi = mi - 1;
                 } else {
                     lo = mi + 1;
                 }
             }
-            ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
+            // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
             // let mut mi_byte: usize = mi;
             // if mi_byte < value_start || mi_byte - value_start >= 128 {
