@@ -71,10 +71,9 @@ where
             self.update_frame_bit_index(frame_chunk_byte_index, frame_chunk_bit_index);
             self.update_huffman_code(frame_chunk_byte_index, frame_chunk_bit_index);
 
-            // frame_bit_index must be updated first
+            // frame_bit_index must be calculated before
             let (bt_chunk_byte_index, bt_chunk_bit_index) = self.load_bt_chunk();
 
-            // Check if is a leaf (marked as bit 1) in binary tree.
             if self.is_leaf(bt_chunk_byte_index, bt_chunk_bit_index) {
                 self.update_buffer();
             }
@@ -118,6 +117,7 @@ where
         (bt_chunk_byte_index, bt_chunk_bit_index)
     }
 
+    /// Update frame_bit_index based on frame_chunk_byte_index and frame_chunk_bit_index
     fn update_frame_bit_index(
         &mut self,
         frame_chunk_byte_index: usize,
@@ -131,6 +131,7 @@ where
         }
     }
 
+    /// Update huffman_code based on frame_chunk_byte_index and frame_chunk_bit_index
     fn update_huffman_code(&mut self, frame_chunk_byte_index: usize, frame_chunk_bit_index: usize) {
         // For "1" choose right branch, for "0" choose left branch.
         if self.frame_chunk[frame_chunk_byte_index] & (0b1000_0000 >> frame_chunk_bit_index) != 0 {
@@ -140,6 +141,7 @@ where
         }
     }
 
+    /// Check if is a leaf (marked as bit "1") in binary tree.
     fn is_leaf(&self, bt_chunk_byte_index: usize, bt_chunk_bit_index: usize) -> bool {
         self.bt_chunk[bt_chunk_byte_index] & (0b1000_0000 >> bt_chunk_bit_index) != 0
     }
@@ -159,9 +161,11 @@ where
             }
         }
 
+        // Should be unreachable, as value always should be found
         0
     }
 
+    /// Update buffer and if is full then flush.
     fn update_buffer(&mut self) {
         let index = self.search_huffman_code(self.huffman_code);
 
