@@ -2,8 +2,8 @@
 #![no_main]
 
 use animation_ssd1306::encoded_frames::*;
-use animation_ssd1306::non_buffered_mode::MyType;
-use animation_ssd1306::non_buffered_mode::NonBufferedMode;
+use animation_ssd1306::driver_wrapper::MyType;
+use animation_ssd1306::driver_wrapper::NonBufferedMode;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 use avr_progmem::wrapper::ProgMem;
