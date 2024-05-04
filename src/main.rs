@@ -267,7 +267,7 @@ fn main() -> ! {
     let mut value_start = 0;
     let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
 
-    let mut buf = [0; 4];
+    let mut buf = [0; 128];
     let mut buf_i = 0;
     for i in 0..frame_bits_size {
         ufmt::uwriteln!(&mut serial, "BUKA {}", i).unwrap();
@@ -305,7 +305,7 @@ fn main() -> ! {
             let mut mi: usize = (hi - lo) / 2 + lo;
 
             let search_code = current_index - 2;
-            ufmt::uwriteln!(&mut serial, "BUKA search_code {}", search_code).unwrap();
+            ufmt::uwriteln!(&mut serial, "BUKA search_code 0x{:04x}", search_code).unwrap();
             while lo <= hi {
                 mi = (hi - lo) / 2 + lo;
                 // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
@@ -318,7 +318,7 @@ fn main() -> ! {
                     lo = mi + 1;
                 }
             }
-            // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
+            ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
             let mut mi_byte: usize = mi;
             if mi_byte < value_start || mi_byte - value_start >= 128 {

@@ -316,51 +316,39 @@ def main() -> None:
     # Create raw_image.rs
     with open("raw_image.rs", "w") as f:
         rs_insert_header(f)
-        rs_insert_huffman_coding(f, hc)
+        rs_insert_huffman_indexes_and_values(f, hc)
+
+        rs_insert_progmem_start(f)
+        rs_insert_huffman_coding_tree(f, hc)
 
         for index, file_path in enumerate(files_paths):
             image = resize_image(file_path)
             rs_insert_frame(f, hc, image, index)
 
-        rs_insert_end(f)
+        rs_insert_progmem_end(f)
 
 
 def rs_insert_header(f) -> None:
     f.write("use avr_progmem::progmem;\n\n")
     f.write("#[rustfmt::skip]\n")
-    f.write("progmem! {\n\n")
 
 
-def rs_insert_end(f) -> None:
-    f.write("\n}\n")
+def rs_insert_progmem_start(f) -> None:
+    f.write("\nprogmem! {\n\n")
 
 
-def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
-    bt_array = hc.get_binary_tree_array()
-    f.write(
-        f"pub static progmem BINARY_TREE_LEAFS_BITS_SIZE: usize = {len(bt_array)};\n"
-    )
+def rs_insert_progmem_end(f) -> None:
+    f.write("\n} // progmem\n")
 
-    # Extend bit array if the size is not a multiple of 8
-    bits_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
-    if len(bits_array) % 8 != 0:
-        extension_size = 8 - len(bits_array) % 8
-        bits_array.extend("0" * extension_size)
 
-    # Insert bit array with leafs marked as 1 (0 in other case)
-    f.write(f"pub static progmem BINARY_TREE_LEAFS: [u8; {len(bits_array) // 8}] = [\n")
-    for i in range(0, len(bits_array), 8):
-        value = int("0b" + "".join(bits_array[i : i + 8]), 2)
-        f.write(f"0x{value:02x},")
-    f.write("\n];\n")
-
-    # Insert binary tree codes in ascending order
+def rs_insert_huffman_indexes_and_values(f, hc: HuffmanCoding) -> None:
+    # Insert binary tree codes (indexes to values) in ascending order
     coding_table = hc.get_huffman_coding()
     code_to_value = sorted(
         [(int(f"0b{code}", 2), value) for value, code in coding_table.items()]
     )
     f.write(
-        f"pub static progmem BINARY_TREE_LEAFS_TO_INDEXES: [u16; {len(code_to_value)}] = [\n"
+        f"pub static BINARY_TREE_LEAFS_TO_INDEXES: [u16; {len(code_to_value)}] = [\n"
     )
     for code, _ in code_to_value:
         f.write(f"0x{code:04x},")
@@ -368,9 +356,29 @@ def rs_insert_huffman_coding(f, hc: HuffmanCoding) -> None:
 
     # Insert binary tree values
     f.write(
-        f"pub static progmem BINARY_TREE_INDEXES_TO_VALUES: [u8; {len(code_to_value)}] = [\n"
+        f"pub static BINARY_TREE_INDEXES_TO_VALUES: [u8; {len(code_to_value)}] = [\n"
     )
     for _, value in code_to_value:
+        f.write(f"0x{value:02x},")
+    f.write("\n];\n")
+
+
+def rs_insert_huffman_coding_tree(f, hc: HuffmanCoding) -> None:
+    # Insert bit array with leafs marked as 1 (0 in other case)
+    bt_array = hc.get_binary_tree_array()
+    f.write(
+        f"pub static progmem BINARY_TREE_LEAFS_BITS_SIZE: usize = {len(bt_array)};\n"
+    )
+
+    # Extend bit array if the size is not a multiple of (128*8). Needed by load_sub_array<128>()
+    bits_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
+    if len(bits_array) % (128 * 8) != 0:
+        padding_size = (128 * 8) - (len(bits_array) % (128 * 8))
+        bits_array.extend("0" * padding_size)
+
+    f.write(f"pub static progmem BINARY_TREE_LEAFS: [u8; {len(bits_array) // 8}] = [\n")
+    for i in range(0, len(bits_array), 8):
+        value = int("0b" + "".join(bits_array[i : i + 8]), 2)
         f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
@@ -384,9 +392,10 @@ def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None
         f"pub static progmem SKULL_FRAME{index:02d}_BITS_SIZE: usize = {len(bits_str)};\n"
     )
 
-    if len(bits_str) % 8 != 0:
-        extension_size = 8 - len(bits_str) % 8
-        bits_str += "0" * extension_size
+    # Extend bits_str if the size is not a multiple of (128*8). Needed by load_sub_array<128>()
+    if len(bits_str) % (128 * 8) != 0:
+        padding_size = (128 * 8) - (len(bits_str) % (128 * 8))
+        bits_str += "0" * padding_size
 
     f.write(
         f"pub static progmem SKULL_FRAME{index:02d}: [u8; {len(bits_str) // 8}] = [\n"
