@@ -7,73 +7,12 @@ import cv2
 import numpy as np
 import heapq
 import typing
-import math
 
 
-GIF_NAME = "skull.gif"
+GIF_FILE_NAME = "skull.gif"
 RESIZE_FACTOR = 0.5
-THRESHOLD = 97
 
-
-def resize_image(file_name: str) -> np.ndarray:
-    """Resize image from 200x200 to 128x64."""
-    image = cv2.imread(file_name)
-    print(
-        f"{file_name}, Height x Width x Channels: {image.shape}, dtype: {image.dtype}"
-    )
-
-    # Resize by half
-    resized_image = cv2.resize(image, (0, 0), fx=RESIZE_FACTOR, fy=RESIZE_FACTOR)
-    # Crop empty rows
-    cropped_image = resized_image[15:79, :]
-
-    # Add margin (columns) to match 128x64 size
-    margin = np.zeros((64, 14, 3), dtype=image.dtype)
-    new_size_image = np.hstack((margin, cropped_image))
-    new_size_image = np.hstack((new_size_image, margin))
-
-    # Convert to grayscale
-    gray_image = cv2.cvtColor(new_size_image, cv2.COLOR_BGR2GRAY)
-    # output_image = cv2.threshold(gray_image, THRESHOLD, 255, cv2.THRESH_BINARY)[1]
-    # output_image = cv2.threshold(gray_image, 128, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)[1]
-    # output_image = cv2.adaptiveThreshold(
-    #     gray_image, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 13, 5
-    # )
-    # Finds edges in an image using the Canny algorithm
-    output_image = cv2.Canny(gray_image, 150, 250)
-    print(
-        f"Height x Width x Channels. Input {image.shape}, dtype: {image.dtype}."
-        f" Output {output_image.shape}, dtype: {output_image.dtype}"
-    )
-
-    # cv2.imshow("image_window", output_image)
-    # cv2.waitKey(0)
-
-    return output_image
-
-
-# def convert_image_to_array(image: np.ndarray) -> str:
-#     """Convert image (numpy array) to rust array."""
-#     output = "#[rustfmt::skip]\n"
-#     output += "const SKULL_FRAME: &[u8] = &[\n"
-#     # output_image[output_image > 0] = 1
-#     for y in range(image.shape[0]):
-#         output += "    "
-#         for x in range(image.shape[1] // 8):
-#             output += (
-#                 "0b"
-#                 + "".join(
-#                     ["1" if val > 0 else "0" for val in image[y, x * 8 : (x * 8) + 8]]
-#                 )
-#                 + ","
-#             )
-
-#         output += "\n"
-
-#     output += "];\n"
-
-#     print(output)
-#     return output
+ARRAY_CHUNK = 128
 
 
 class HuffmanCoding:
@@ -94,18 +33,12 @@ class HuffmanCoding:
             self.right = None
 
         def __repr__(self) -> str:
-            """Description."""
+            """Node stored data (freq, value)."""
             return f"Node (freq: {self.freq}, value: {self.value})"
 
         def __lt__(self, other: "HuffmanCoding.Node") -> bool:
             """Compare nodes by their frequencies (less than comparator)."""
-            # if self.freq == other.freq:
-            #     if self.value is None:
-            #         return False
-
             return self.freq < other.freq
-
-    # FREQ_ARRAY_SIZE = 256
 
     def __init__(self) -> None:
         """Init Huffman coding fields."""
@@ -125,34 +58,22 @@ class HuffmanCoding:
             node_left = heapq.heappop(min_heap)
             node_right = heapq.heappop(min_heap)
 
-            # if (node_left.value is not None):
-            #     print(f"l: {chr(node_left.value)}")
-            # else:
-            #     print("l: None")
-
-            # if (node_right.value is not None):
-            #     print(f"r: {chr(node_right.value)}")
-            # else:
-            #     print("r: None")
-
             parent = HuffmanCoding.Node(node_left.freq + node_right.freq, None)
             parent.left = node_left
             parent.right = node_right
             heapq.heappush(min_heap, parent)
 
         self._root = heapq.heappop(min_heap)
-        # print(root)
-        # return root
 
     def _convert_binary_tree_to_array(self) -> list:
-        """Convert binary tree to array."""
+        """Convert binary tree to array (list)."""
         if self._root is None:
             raise Exception("root is None")
 
+        # Root is at index 1 to simplify calculation
         self._bt_array = [HuffmanCoding.NIL, HuffmanCoding.MISSING_VALUE]
         if self._root.value is not None:
             self._bt_array[1] = self._root.value
-            # bt_array[1] = root.freq
 
         def dfs(parent: "HuffmanCoding.Node", parent_idx: int) -> None:
             """
@@ -177,18 +98,14 @@ class HuffmanCoding:
                 if parent.left.value is None:
                     self._bt_array[left_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    # self._bt_array[left_idx] = chr(parent.left.value)
                     self._bt_array[left_idx] = parent.left.value
-                    # bt_array[left_idx] = parent.left.freq
 
             self._bt_array[right_idx] = HuffmanCoding.NIL
             if parent.right is not None:
                 if parent.right.value is None:
                     self._bt_array[right_idx] = HuffmanCoding.MISSING_VALUE
                 else:
-                    # self._bt_array[right_idx] = chr(parent.right.value)
                     self._bt_array[right_idx] = parent.right.value
-                    # bt_array[right_idx] = parent.right.freq
 
             dfs(parent.left, left_idx)
             dfs(parent.right, right_idx)
@@ -210,19 +127,21 @@ class HuffmanCoding:
         self._freq_map[value] += 1
 
     def calculate_coding(self) -> None:
+        """Build coding table to all stored values."""
         self._build_binary_tree()
         self._convert_binary_tree_to_array()
         self._coding_table = self._create_coding_table(self._root)
 
-    def stats(self) -> None:
-        """Print status from collected data."""
+    def info(self) -> None:
+        """Print info from collected data."""
         if self._root is None:
             raise Exception("root doesn't exist")
 
-        print(self._bt_array)
-        print(f"Binary tree array size: {len(self._bt_array)}")
+        # print(self._bt_array)
+        print(f"\nBinary tree array size: {len(self._bt_array)} (nodes)")
 
         print("Huffman codes. Values -> Code:")
+        print("----------------------")
         count_bits = 0
         for value, freq in self._freq_map.items():
             count_bits += len(self._coding_table[value]) * freq
@@ -231,36 +150,45 @@ class HuffmanCoding:
         print(f"Compression: {count_bits} bits, {count_bits/8:.2f} bytes.")
 
     def get_binary_tree_array(self) -> list:
+        """Getter for binary tree array."""
         return self._bt_array
 
     def get_huffman_coding(self) -> dict:
+        """Getter for Huffman coding table (dict)."""
         return self._coding_table
 
 
-def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
-    """Convert image (numpy array) to rust array."""
+def convert_image(file_name: str) -> np.ndarray:
+    """Resize image from 200x200 to 128x64 and do additional manipulation for better look."""
+    image = cv2.imread(file_name)
+    # print(
+    #     f"{file_name}, Height x Width x Channels: {image.shape}, dtype: {image.dtype}"
+    # )
 
-    output = f"pub static progmem SKULL_FRAME{file_suffix:02d}: [u8; 1024] = [\n"
+    # Resize by half
+    resized_image = cv2.resize(image, (0, 0), fx=RESIZE_FACTOR, fy=RESIZE_FACTOR)
+    # Crop empty rows
+    cropped_image = resized_image[15:79, :]
 
-    for y in range(0, image.shape[0], 8):
-        output += "    "
-        for x in range(image.shape[1]):
-            if x != 0:
-                output += " "
+    # Add margin (columns) to match 128x64 size
+    margin = np.zeros((64, 14, 3), dtype=image.dtype)
+    new_size_image = np.hstack((margin, cropped_image))
+    new_size_image = np.hstack((new_size_image, margin))
 
-            bits = reversed(["1" if val > 0 else "0" for val in image[y : y + 8, x]])
-            value = int("0b" + "".join(bits), 2)
-            output += f"0x{value:02x},"
+    # Convert to grayscale
+    gray_image = cv2.cvtColor(new_size_image, cv2.COLOR_BGR2GRAY)
 
-        output += "\n"
+    # Finds edges in an image using the Canny algorithm
+    output_image = cv2.Canny(gray_image, 150, 250)
+    # print(
+    #     f"Height x Width x Channels. Input {image.shape}, dtype: {image.dtype}."
+    #     f" Output {output_image.shape}, dtype: {output_image.dtype}"
+    # )
 
-    output += "];\n"
-
-    print(output)
-    return output
+    return output_image
 
 
-def convert_image_to_list3(image: np.ndarray) -> list:
+def convert_image_to_list(image: np.ndarray) -> list:
     """Convert image (numpy array) to list."""
     result = []
 
@@ -272,132 +200,47 @@ def convert_image_to_list3(image: np.ndarray) -> list:
 
     return result
 
-def show_codes():
-    # Create sorted list of frames files
-    files_paths = sorted(
-        [
-            str(file_path)
-            for file_path in Path("./").rglob("frame_*.bmp")
-            if file_path.is_file()
-        ]
-    )
 
-    # Create huffman coding for all frames
-    hc = HuffmanCoding()
-    for file_path in files_paths:
-        image = resize_image(file_path)
-        array = convert_image_to_list3(image)
-
-        for value in array:
-            hc.insert_value(value)
-
-    hc.calculate_coding()
-    image = resize_image("./frame_0002.bmp")
-    ll = convert_image_to_list3(image)
-
-    coding_table = hc.get_huffman_coding()
-    for idx, value in enumerate(ll):
-        dec = int(f'0b{coding_table[value]}', 2)
-        print(f"{idx} -> {coding_table[value]} == {dec}")
-
-
-
-
-def main() -> None:
-    # h = HuffmanCoding()
-    # # for ch in "Stressed-desserts":
-    # # for ch in "abcdefghi":
-    # # for ch in [x for x in range(256)]:
-    # # for ch in "Today_is_Monday":
-    # for ch in "aaaaaabcdefgh":
-    #     h.insert_value(ord(ch))
-    #     # h.insert_value(ch)
-
-    # h.calculate_coding()
-    # h.stats()
-
-
-    # show_codes()
-    # return
-
-    # Extract frames from gif file
-    subprocess.run(
-        ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
-        stdout=subprocess.PIPE,
-    )
-
-    # Create sorted list of frames files
-    files_paths = sorted(
-        [
-            str(file_path)
-            for file_path in Path("./").rglob("frame_*.bmp")
-            if file_path.is_file()
-        ]
-    )
-
-    # Create huffman coding for all frames
-    hc = HuffmanCoding()
-    for file_path in files_paths:
-        image = resize_image(file_path)
-        array = convert_image_to_list3(image)
-
-        for value in array:
-            hc.insert_value(value)
-
-    hc.calculate_coding()
-    hc.stats()
-
-    # Create raw_image.rs
-    with open("raw_image.rs", "w") as f:
-        rs_insert_header(f)
-        rs_insert_huffman_indexes_and_values(f, hc)
-
-        rs_insert_progmem_start(f)
-        rs_insert_huffman_coding_tree(f, hc)
-
-        for index, file_path in enumerate(files_paths):
-            image = resize_image(file_path)
-            rs_insert_frame(f, hc, image, index)
-
-        rs_insert_progmem_end(f)
-
-
-def rs_insert_header(f) -> None:
+def rs_insert_header(f: typing.BinaryIO) -> None:
+    """Insert header section into encoded_frames.rs."""
     f.write("use avr_progmem::progmem;\n\n")
     f.write("#[rustfmt::skip]\n")
 
 
-def rs_insert_progmem_start(f) -> None:
+def rs_insert_progmem_start(f: typing.BinaryIO) -> None:
+    """Insert progmem block (start) into encoded_frames.rs."""
     f.write("\nprogmem! {\n\n")
 
 
-def rs_insert_progmem_end(f) -> None:
+def rs_insert_progmem_end(f: typing.BinaryIO) -> None:
+    """Insert progmem block (end) into encoded_frames.rs."""
     f.write("\n} // progmem\n")
 
 
-def rs_insert_huffman_indexes_and_values(f, hc: HuffmanCoding) -> None:
+def rs_insert_huffman_indexes_and_values(f: typing.BinaryIO, hc: HuffmanCoding) -> None:
+    """
+    Insert BINARY_TREE_CODES BINARY_TREE_VALUES into encoded_frames.rs. They are not in
+    progmem block!
+    """
     # Insert binary tree codes (indexes to values) in ascending order
     coding_table = hc.get_huffman_coding()
     code_to_value = sorted(
         [(int(f"0b{code}", 2), value) for value, code in coding_table.items()]
     )
-    f.write(
-        f"pub static BINARY_TREE_CODES: [u16; {len(code_to_value)}] = [\n"
-    )
+    f.write(f"pub static BINARY_TREE_CODES: [u16; {len(code_to_value)}] = [\n    ")
     for code, _ in code_to_value:
         f.write(f"0x{code:04x},")
     f.write("\n];\n")
 
     # Insert binary tree values
-    f.write(
-        f"pub static BINARY_TREE_VALUES: [u8; {len(code_to_value)}] = [\n"
-    )
+    f.write(f"pub static BINARY_TREE_VALUES: [u8; {len(code_to_value)}] = [\n    ")
     for _, value in code_to_value:
         f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
 
-def rs_insert_huffman_coding_tree(f, hc: HuffmanCoding) -> None:
+def rs_insert_huffman_coding_tree(f: typing.BinaryIO, hc: HuffmanCoding) -> None:
+    """Insert Huffman coding tree (represented as bit array) into encoded_frames.rs."""
     # Insert bit array with leafs marked as 1 (0 in other case)
     bt_array = hc.get_binary_tree_array()
     f.write(
@@ -406,20 +249,23 @@ def rs_insert_huffman_coding_tree(f, hc: HuffmanCoding) -> None:
 
     # Extend bit array if the size is not a multiple of (128*8). Needed by load_sub_array<128>()
     bits_array = ["0" if node_value < 0 else "1" for node_value in bt_array]
-    if len(bits_array) % (128 * 8) != 0:
-        padding_size = (128 * 8) - (len(bits_array) % (128 * 8))
+    if len(bits_array) % (ARRAY_CHUNK * 8) != 0:
+        padding_size = (ARRAY_CHUNK * 8) - (len(bits_array) % (ARRAY_CHUNK * 8))
         bits_array.extend("0" * padding_size)
 
-    f.write(f"pub static progmem BINARY_TREE_LEAFS: [u8; {len(bits_array) // 8}] = [\n")
+    f.write(
+        f"pub static progmem BINARY_TREE_LEAFS: [u8; {len(bits_array) // 8}] = [\n    "
+    )
     for i in range(0, len(bits_array), 8):
         value = int("0b" + "".join(bits_array[i : i + 8]), 2)
         f.write(f"0x{value:02x},")
     f.write("\n];\n")
 
 
-def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None:
+def rs_insert_frame(f: typing.BinaryIO, hc: HuffmanCoding, image: np.ndarray, index: int) -> None:
+    """Insert frame (array) into encoded_frames.rs."""
     coding_table = hc.get_huffman_coding()
-    array = convert_image_to_list3(image)
+    array = convert_image_to_list(image)
 
     bits_str = "".join(coding_table[value] for value in array)
     f.write(
@@ -427,12 +273,12 @@ def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None
     )
 
     # Extend bits_str if the size is not a multiple of (128*8). Needed by load_sub_array<128>()
-    if len(bits_str) % (128 * 8) != 0:
-        padding_size = (128 * 8) - (len(bits_str) % (128 * 8))
+    if len(bits_str) % (ARRAY_CHUNK * 8) != 0:
+        padding_size = (ARRAY_CHUNK * 8) - (len(bits_str) % (ARRAY_CHUNK * 8))
         bits_str += "0" * padding_size
 
     f.write(
-        f"pub static progmem SKULL_FRAME{index:02d}: [u8; {len(bits_str) // 8}] = [\n"
+        f"pub static progmem SKULL_FRAME{index:02d}: [u8; {len(bits_str) // 8}] = [\n    "
     )
     for i in range(0, len(bits_str), 8):
         value = int("0b" + "".join(bits_str[i : i + 8]), 2)
@@ -440,12 +286,15 @@ def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None
     f.write("\n];\n")
 
 
-def main2() -> None:
+def main() -> None:
+    """Main function. Convert skull.gif -> *.bmp frames -> encoded_frames.rs (Huffman coding)."""
+    # Extract frames from gif file
     subprocess.run(
-        ["ffmpeg", "-r", "1", "-i", f"{GIF_NAME}", "-r", " 1", r"frame_%04d.bmp"],
+        ["ffmpeg", "-r", "1", "-i", f"{GIF_FILE_NAME}", "-r", " 1", r"frame_%04d.bmp"],
         stdout=subprocess.PIPE,
     )
 
+    # Create sorted list of frames files
     files_paths = sorted(
         [
             str(file_path)
@@ -454,23 +303,31 @@ def main2() -> None:
         ]
     )
 
-    with open("raw_image.rs", "w") as f:
-        f.write("use avr_progmem::progmem;\n\n")
-        f.write("#[rustfmt::skip]\n")
-        f.write("progmem! {\n")
+    # Create huffman coding for all frames
+    hc = HuffmanCoding()
+    for file_path in files_paths:
+        image = convert_image(file_path)
+        array = convert_image_to_list(image)
 
-        # f.write(f"    pub const SKULL_FRAME: &[[u8; 1024]; {len(files_paths)}] = &[\n")
+        for value in array:
+            hc.insert_value(value)
+
+    hc.calculate_coding()
+    hc.info()
+
+    # Encode all frames and create encoded_frames.rs
+    with open("encoded_frames.rs", "w") as f:
+        rs_insert_header(f)
+        rs_insert_huffman_indexes_and_values(f, hc)
+
+        rs_insert_progmem_start(f)
+        rs_insert_huffman_coding_tree(f, hc)
+
         for index, file_path in enumerate(files_paths):
-            # image = resize_image("0001.bmp")
-            image = resize_image(file_path)
+            image = convert_image(file_path)
+            rs_insert_frame(f, hc, image, index)
 
-            # convert_image_to_array(image)
-            array = convert_image_to_array2(image, index)
-            f.write(array)
-            # images = [resize_image(file_name) for file_name in files_paths]
-
-        # f.write("\n];\n")
-        f.write("}\n")
+        rs_insert_progmem_end(f)
 
 
 if __name__ == "__main__":
