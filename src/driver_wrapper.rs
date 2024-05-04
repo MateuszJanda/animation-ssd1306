@@ -20,8 +20,6 @@ use embedded_graphics_core::{
 /// Custom buffered graphics mode.
 ///
 /// MinBufferMode with array of size 1.
-// #[derive(Clone, Debug)]
-// #[derive(Clone)]
 pub struct MinBufferMode<'a> {
     /// One-byte array
     buffer: [u8; 1],
@@ -46,7 +44,7 @@ impl<'a> MinBufferMode<'a> {
     }
 }
 
-/// Wrapper on Ssd1306 driver to use custom MinBufferMode.
+/// Wrapper (tuple struct) on Ssd1306 driver to use custom MinBufferMode.
 pub struct Ssd1306DriverWrapper<'a, DI, SIZE>(pub Ssd1306<DI, SIZE, MinBufferMode<'a>>);
 
 impl<'a, DI, SIZE> Ssd1306DriverWrapper<'a, DI, SIZE>
@@ -106,6 +104,7 @@ where
         self.mode_mut().buffer[0] =
             self.mode_mut().buffer[0] & !(1 << bit_num) | (value << bit_num);
 
+        // Save current pixel position as last modified
         self.mode_mut().last_x = x as u8;
         self.mode_mut().last_y = y as u8;
     }
@@ -134,12 +133,12 @@ where
         self.set_draw_area((0, 0), (width, height))
     }
 
-    ///  New wrapper method. Pass buffer directly to device (by SPI interface).
+    /// New wrapper method. Pass buffer directly to device (by SPI interface).
     pub fn draw_strips_from_buffer(&mut self, buffer: &[u8]) -> Result<(), DisplayError> {
         self.interface_mut().send_data(U8(buffer))
     }
 
-    /// Send data from buffer to device (by SPI interface).
+    /// Send data from (one-byte) buffer to device (by SPI interface).
     pub fn flush(&mut self) -> Result<(), DisplayError> {
         if self.mode().last_x == u8::MAX || self.mode().last_y == u8::MAX {
             return Ok(());
@@ -191,6 +190,7 @@ where
     type Color = BinaryColor;
     type Error = DisplayError;
 
+    /// Copied from BufferedGraphicsMode.
     fn draw_iter<I>(&mut self, pixels: I) -> Result<(), Self::Error>
     where
         I: IntoIterator<Item = Pixel<Self::Color>>,
@@ -207,6 +207,7 @@ where
         Ok(())
     }
 
+    /// Copied from BufferedGraphicsMode.
     fn clear(&mut self, color: Self::Color) -> Result<(), Self::Error> {
         self.clear_impl(color.is_on());
         Ok(())
@@ -218,6 +219,7 @@ where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
+    /// Copied from BufferedGraphicsMode. Get Display size.
     fn size(&self) -> Size {
         let (w, h) = self.0.dimensions();
 
@@ -232,14 +234,14 @@ where
 {
     type Error = DisplayError;
 
-    /// Set the display rotation
+    /// Set the display rotation.
     ///
     /// This method resets the cursor but does not clear the screen.
     fn set_rotation(&mut self, rot: DisplayRotation) -> Result<(), DisplayError> {
         self.0.set_rotation(rot)
     }
 
-    /// Initialize and clear the display in graphics mode.
+    /// Initialize (with AddrMode::Horizontal ad default) and clear the display in graphics mode.
     fn init(&mut self) -> Result<(), DisplayError> {
         (self.mode_mut().print_debug)("Ssd1306DriverWrapper init", 0);
         self.clear_impl(false);
@@ -250,12 +252,16 @@ where
 impl<'a, DI, SIZE> Deref for Ssd1306DriverWrapper<'a, DI, SIZE> {
     type Target = Ssd1306<DI, SIZE, MinBufferMode<'a>>;
 
+    /// Add deref to access Ssd1306DriverWrapper same way as to Ssd1306. Without "self.0" as
+    /// Ssd1306DriverWrapper is tuple struct.
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
 impl<'a, DI, SIZE> DerefMut for Ssd1306DriverWrapper<'a, DI, SIZE> {
+    /// Add deref to access Ssd1306DriverWrapper same way as to Ssd1306. Without "self.0" as
+    /// Ssd1306DriverWrapper is tuple struct.
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
