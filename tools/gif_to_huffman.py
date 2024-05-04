@@ -260,8 +260,8 @@ def convert_image_to_array2(image: np.ndarray, file_suffix: int) -> str:
     return output
 
 
-def convert_image_to_array3(image: np.ndarray) -> list:
-    """Convert image (numpy array) to array."""
+def convert_image_to_list3(image: np.ndarray) -> list:
+    """Convert image (numpy array) to list."""
     result = []
 
     for y in range(0, image.shape[0], 8):
@@ -271,6 +271,36 @@ def convert_image_to_array3(image: np.ndarray) -> list:
             result.append(value)
 
     return result
+
+def show_codes():
+    # Create sorted list of frames files
+    files_paths = sorted(
+        [
+            str(file_path)
+            for file_path in Path("./").rglob("frame_*.bmp")
+            if file_path.is_file()
+        ]
+    )
+
+    # Create huffman coding for all frames
+    hc = HuffmanCoding()
+    for file_path in files_paths:
+        image = resize_image(file_path)
+        array = convert_image_to_list3(image)
+
+        for value in array:
+            hc.insert_value(value)
+
+    hc.calculate_coding()
+    image = resize_image("./frame_0002.bmp")
+    ll = convert_image_to_list3(image)
+
+    coding_table = hc.get_huffman_coding()
+    for idx, value in enumerate(ll):
+        dec = int(f'0b{coding_table[value]}', 2)
+        print(f"{idx} -> {coding_table[value]} == {dec}")
+
+
 
 
 def main() -> None:
@@ -285,6 +315,10 @@ def main() -> None:
 
     # h.calculate_coding()
     # h.stats()
+
+
+    show_codes()
+    return
 
     # Extract frames from gif file
     subprocess.run(
@@ -305,7 +339,7 @@ def main() -> None:
     hc = HuffmanCoding()
     for file_path in files_paths:
         image = resize_image(file_path)
-        array = convert_image_to_array3(image)
+        array = convert_image_to_list3(image)
 
         for value in array:
             hc.insert_value(value)
@@ -385,7 +419,7 @@ def rs_insert_huffman_coding_tree(f, hc: HuffmanCoding) -> None:
 
 def rs_insert_frame(f, hc: HuffmanCoding, image: np.ndarray, index: int) -> None:
     coding_table = hc.get_huffman_coding()
-    array = convert_image_to_array3(image)
+    array = convert_image_to_list3(image)
 
     bits_str = "".join(coding_table[value] for value in array)
     f.write(

@@ -263,6 +263,7 @@ fn main() -> ! {
     let mut frame_start = 0;
     let mut frame: [u8; 128] = SKULL_FRAME02.load_sub_array::<128>(frame_start);
     let mut current_index = 1;
+    let mut current_code = 0;
 
     // let mut value_start = 0;
     // let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
@@ -270,7 +271,7 @@ fn main() -> ! {
     let mut buf = [0; 128];
     let mut buf_i = 0;
     for i in 0..frame_bits_size {
-        ufmt::uwriteln!(&mut serial, "BUKA {}", i).unwrap();
+        // ufmt::uwriteln!(&mut serial, "BUKA i: {}, buf_i: {}, current_index: {}", i, buf_i, current_index).unwrap();
 
         let mut frame_byte = i / 8;
         let frame_bit = i % 8;
@@ -283,10 +284,22 @@ fn main() -> ! {
 
         if frame[frame_byte] & (0b1000_0000 >> frame_bit) != 0 {
             current_index = 2 * current_index + 1;
+            current_code = current_code << 1 | 1;
         } else {
             current_index = 2 * current_index;
+            current_code = current_code << 1;
         }
         // ufmt::uwriteln!(&mut serial, "BUKA current_index {}", current_index).unwrap();
+        ufmt::uwriteln!(
+            &mut serial,
+            "BUKA i: {}, buf_i: {}, current_index: {}, current_code: {}, bit: {}",
+            i,
+            buf_i,
+            current_index,
+            current_code,
+            frame[frame_byte] & (0b1000_0000 >> frame_bit) != 0
+        )
+        .unwrap();
 
         let mut bt_byte = current_index / 8;
         let bt_bit = current_index % 8;
@@ -304,7 +317,8 @@ fn main() -> ! {
             let mut hi: usize = BINARY_TREE_LEAFS_TO_INDEXES.len() - 1;
             let mut mi: usize = (hi - lo) / 2 + lo;
 
-            let search_code = current_index - 2;
+            // let search_code = current_index - 2;
+            let search_code = current_code;
             ufmt::uwriteln!(&mut serial, "BUKA search_code 0x{:04x}", search_code).unwrap();
             while lo <= hi {
                 mi = (hi - lo) / 2 + lo;
@@ -330,6 +344,7 @@ fn main() -> ! {
             buf[buf_i] = BINARY_TREE_INDEXES_TO_VALUES[mi];
             ufmt::uwriteln!(&mut serial, "BUKA mi {}, value 0x{:x} ", mi, buf[buf_i]).unwrap();
             current_index = 1;
+            current_code = 0;
 
             // let mi_byte =BINARY_TREE_INDEXES_TO_VALUES
 
