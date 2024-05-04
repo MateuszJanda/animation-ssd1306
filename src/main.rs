@@ -19,6 +19,14 @@ where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
+    frame_chunk_start: usize,
+    frame_chunk: [u8; ARRAY_CHUNK_SIZE],
+    bt_chunk_start: usize,
+    bt_chunk: [u8; ARRAY_CHUNK_SIZE],
+    buffer: [u8; ARRAY_CHUNK_SIZE],
+    buffer_byte_count: usize,
+    frame_bit_index: usize,
+    huffman_code: usize,
     display: Ssd1306DriverWrapper<DI, SIZE>,
 }
 
@@ -29,82 +37,143 @@ where
 {
     /// Create instance of Huffman code decoder.
     pub fn new(display: Ssd1306DriverWrapper<DI, SIZE>) -> Self {
-        Self { display }
+        Self {
+            frame_chunk_start: 0,
+            frame_chunk: [0; ARRAY_CHUNK_SIZE],
+            bt_chunk_start: 0,
+            bt_chunk: [0; ARRAY_CHUNK_SIZE],
+            buffer: [0; ARRAY_CHUNK_SIZE],
+            buffer_byte_count: 0,
+            frame_bit_index: 1,
+            huffman_code: 0,
+            display,
+        }
     }
 
-    /// Decode frame_chunk and draw it on display.
+    /// Decode frame and draw it on display.
     pub fn decode(&mut self, frame_bits_size: usize, frame_array: &ProgMem<[u8; 384]>) {
-        let mut bt_chunk_start = 0;
-        let mut bt_chunk = BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(bt_chunk_start);
+        self.bt_chunk_start = 0;
+        self.bt_chunk = BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(self.bt_chunk_start);
 
-        let mut frame_chunk_start = 0;
-        let mut frame_chunk = frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(frame_chunk_start);
+        self.frame_chunk_start = 0;
+        self.frame_chunk = frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(self.frame_chunk_start);
 
-        let mut frame_bit_index = 1;
-        let mut huffman_code = 0;
+        self.frame_bit_index = 1;
+        self.huffman_code = 0;
 
-        let mut buffer = [0; ARRAY_CHUNK_SIZE];
-        let mut buffer_byte_count = 0;
+        self.buffer = [0; ARRAY_CHUNK_SIZE];
+        self.buffer_byte_count = 0;
 
         for i in 0..frame_bits_size {
-            let frame_byte_index = i / 8;
-            // If frame byte is not in current chunk, read proper one.
-            if frame_byte_index - frame_chunk_start >= ARRAY_CHUNK_SIZE {
-                frame_chunk_start = (frame_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
-                frame_chunk = frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(frame_chunk_start);
-            }
+            let (frame_chunk_byte_index, frame_chunk_bit_index) =
+                self.load_frame_chunk(i, frame_array);
 
-            let frame_chunk_byte_index = frame_byte_index % ARRAY_CHUNK_SIZE;
-            let frame_chunk_bit_index = i % 8;
+            self.update_frame_bit_index(frame_chunk_byte_index, frame_chunk_bit_index);
+            self.update_huffman_code(frame_chunk_byte_index, frame_chunk_bit_index);
 
-            // For "1" choose right branch, for "0" choose left branch.
-            if frame_chunk[frame_chunk_byte_index] & (0b1000_0000 >> frame_chunk_bit_index) != 0 {
-                frame_bit_index = 2 * frame_bit_index + 1;
-                huffman_code = huffman_code << 1 | 1;
-            } else {
-                frame_bit_index = 2 * frame_bit_index;
-                huffman_code = huffman_code << 1;
-            }
-
-            let bt_byte_index = frame_bit_index / 8;
-            // If binary tree (bt) byte in not in current chunk, read proper one.
-            if bt_byte_index < bt_chunk_start || bt_byte_index - bt_chunk_start >= ARRAY_CHUNK_SIZE
-            {
-                bt_chunk_start = (bt_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
-                bt_chunk = BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(bt_chunk_start);
-            }
-
-            let bt_chunk_byte_index = bt_byte_index % ARRAY_CHUNK_SIZE;
-            let bt_chunk_bit_index = frame_bit_index % 8;
+            // frame_bit_index must be updated first
+            let (bt_chunk_byte_index, bt_chunk_bit_index) = self.load_bt_chunk();
 
             // Check if is a leaf (marked as bit 1) in binary tree.
-            if bt_chunk[bt_chunk_byte_index] & (0b1000_0000 >> bt_chunk_bit_index) != 0 {
-                let mut lo: usize = 0;
-                let mut hi: usize = BINARY_TREE_CODES.len() - 1;
-                let mut mi: usize = (hi - lo) / 2 + lo;
-
-                while lo <= hi {
-                    mi = (hi - lo) / 2 + lo;
-                    if huffman_code == BINARY_TREE_CODES[mi] as usize {
-                        break;
-                    } else if huffman_code < BINARY_TREE_CODES[mi] as usize {
-                        hi = mi - 1;
-                    } else {
-                        lo = mi + 1;
-                    }
-                }
-
-                buffer[buffer_byte_count] = BINARY_TREE_VALUES[mi];
-                frame_bit_index = 1;
-                huffman_code = 0;
-                buffer_byte_count += 1;
-
-                // Flush buffer if is full
-                if buffer_byte_count == buffer.len() {
-                    self.display.draw_strips_from_buffer(&buffer).unwrap();
-                    buffer_byte_count = 0;
-                }
+            if self.is_leaf(bt_chunk_byte_index, bt_chunk_bit_index) {
+                self.update_buffer();
             }
+        }
+    }
+
+    /// If frame byte is not in current chunk, read proper one.
+    fn load_frame_chunk(
+        &mut self,
+        bit_index: usize,
+        frame_array: &ProgMem<[u8; 384]>,
+    ) -> (usize, usize) {
+        let frame_byte_index = bit_index / 8;
+        // If frame byte is not in current chunk, read proper one.
+        if frame_byte_index - self.frame_chunk_start >= ARRAY_CHUNK_SIZE {
+            self.frame_chunk_start = (frame_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
+            self.frame_chunk =
+                frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(self.frame_chunk_start);
+        }
+
+        let frame_chunk_byte_index = frame_byte_index % ARRAY_CHUNK_SIZE;
+        let frame_chunk_bit_index = bit_index % 8;
+
+        (frame_chunk_byte_index, frame_chunk_bit_index)
+    }
+
+    /// If binary tree (bt) byte in not in current chunk, read proper one.
+    fn load_bt_chunk(&mut self) -> (usize, usize) {
+        let bt_byte_index = self.frame_bit_index / 8;
+        if bt_byte_index < self.bt_chunk_start
+            || bt_byte_index - self.bt_chunk_start >= ARRAY_CHUNK_SIZE
+        {
+            self.bt_chunk_start = (bt_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
+            self.bt_chunk =
+                BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(self.bt_chunk_start);
+        }
+
+        let bt_chunk_byte_index = bt_byte_index % ARRAY_CHUNK_SIZE;
+        let bt_chunk_bit_index = self.frame_bit_index % 8;
+
+        (bt_chunk_byte_index, bt_chunk_bit_index)
+    }
+
+    fn update_frame_bit_index(
+        &mut self,
+        frame_chunk_byte_index: usize,
+        frame_chunk_bit_index: usize,
+    ) {
+        // For "1" choose right branch, for "0" choose left branch.
+        if self.frame_chunk[frame_chunk_byte_index] & (0b1000_0000 >> frame_chunk_bit_index) != 0 {
+            self.frame_bit_index = 2 * self.frame_bit_index + 1;
+        } else {
+            self.frame_bit_index = 2 * self.frame_bit_index;
+        }
+    }
+
+    fn update_huffman_code(&mut self, frame_chunk_byte_index: usize, frame_chunk_bit_index: usize) {
+        // For "1" choose right branch, for "0" choose left branch.
+        if self.frame_chunk[frame_chunk_byte_index] & (0b1000_0000 >> frame_chunk_bit_index) != 0 {
+            self.huffman_code = self.huffman_code << 1 | 1;
+        } else {
+            self.huffman_code = self.huffman_code << 1;
+        }
+    }
+
+    fn is_leaf(&self, bt_chunk_byte_index: usize, bt_chunk_bit_index: usize) -> bool {
+        self.bt_chunk[bt_chunk_byte_index] & (0b1000_0000 >> bt_chunk_bit_index) != 0
+    }
+
+    fn search_huffman_code(&self, huffman_code: usize) -> usize {
+        let mut lo: usize = 0;
+        let mut hi: usize = BINARY_TREE_CODES.len() - 1;
+
+        while lo <= hi {
+            let mi = (hi - lo) / 2 + lo;
+            if huffman_code == BINARY_TREE_CODES[mi] as usize {
+                return mi;
+            } else if huffman_code < BINARY_TREE_CODES[mi] as usize {
+                hi = mi - 1;
+            } else {
+                lo = mi + 1;
+            }
+        }
+
+        0
+    }
+
+    fn update_buffer(&mut self) {
+        let index = self.search_huffman_code(self.huffman_code);
+
+        self.buffer[self.buffer_byte_count] = BINARY_TREE_VALUES[index];
+        self.frame_bit_index = 1;
+        self.huffman_code = 0;
+        self.buffer_byte_count += 1;
+
+        // Flush buffer if is full
+        if self.buffer_byte_count == self.buffer.len() {
+            self.display.draw_strips_from_buffer(&self.buffer).unwrap();
+            self.buffer_byte_count = 0;
         }
     }
 }
