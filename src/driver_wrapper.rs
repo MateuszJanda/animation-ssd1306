@@ -34,7 +34,7 @@ impl MinBufferMode {
     /// Here driver read and write some temporary information.
     pub fn new() -> Self {
         Self {
-            buffer: [0],
+            buffer: [0x00],
             last_x: u8::MAX,
             last_y: u8::MAX,
         }
