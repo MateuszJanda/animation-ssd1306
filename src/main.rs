@@ -264,8 +264,8 @@ fn main() -> ! {
     let mut frame: [u8; 128] = SKULL_FRAME02.load_sub_array::<128>(frame_start);
     let mut current_index = 1;
 
-    let mut value_start = 0;
-    let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
+    // let mut value_start = 0;
+    // let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
 
     let mut buf = [0; 128];
     let mut buf_i = 0;
@@ -320,15 +320,15 @@ fn main() -> ! {
             }
             ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
 
-            let mut mi_byte: usize = mi;
-            if mi_byte < value_start || mi_byte - value_start >= 128 {
-                value_start = (mi_byte / 128) * 128;
-                value = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
-                mi_byte = mi_byte % 128;
-            }
+            // let mut mi_byte: usize = mi;
+            // if mi_byte < value_start || mi_byte - value_start >= 128 {
+            //     value_start = (mi_byte / 128) * 128;
+            //     value = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
+            //     mi_byte = mi_byte % 128;
+            // }
 
-            buf[buf_i] = value[mi_byte];
-            ufmt::uwriteln!(&mut serial, "BUKA mi {}, mi_byte {}, value 0x{:x} ", mi, mi_byte, value[mi_byte]).unwrap();
+            buf[buf_i] = BINARY_TREE_INDEXES_TO_VALUES[mi];
+            ufmt::uwriteln!(&mut serial, "BUKA mi {}, value 0x{:x} ", mi, buf[buf_i]).unwrap();
             current_index = 1;
 
             // let mi_byte =BINARY_TREE_INDEXES_TO_VALUES
