@@ -11,7 +11,10 @@ use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
 use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
 
-struct FrameDecoder<'a, DI, SIZE>
+
+const ARRAY_CHUNK_SIZE: usize = 128;
+
+struct HuffmanFrameDecoder<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -19,7 +22,7 @@ where
     display: MyType<'a, DI, SIZE>,
 }
 
-impl<'a, DI, SIZE> FrameDecoder<'a, DI, SIZE>
+impl<'a, DI, SIZE> HuffmanFrameDecoder<'a, DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -28,25 +31,21 @@ where
         Self { display }
     }
 
-    pub fn setup(&mut self) {
-        self.display.setup().unwrap();
-    }
-
     pub fn decode(&mut self, frame_bits_size: usize, frame_array: &ProgMem<[u8; 384]>) {
         // let frame_bits_size = SKULL_FRAME02_BITS_SIZE.load();
         // let x = BINARY_TREE_LEAFS.load_sub_array::<128>(0);
         let mut bt_start = 0;
-        let mut bt: [u8; 128] = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
+        let mut bt = BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(bt_start);
 
         let mut frame_start = 0;
-        let mut frame: [u8; 128] = frame_array.load_sub_array::<128>(frame_start);
+        let mut frame = frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(frame_start);
         let mut current_index = 1;
         let mut current_code = 0;
 
         // let mut value_start = 0;
         // let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
 
-        let mut buf = [0; 128];
+        let mut buf = [0; ARRAY_CHUNK_SIZE];
         let mut buf_i = 0;
         for i in 0..frame_bits_size {
             // ufmt::uwriteln!(&mut serial, "BUKA i: {}, buf_i: {}, current_index: {}", i, buf_i, current_index).unwrap();
@@ -54,12 +53,12 @@ where
             let frame_byte = i / 8;
             // let frame_bit = i % 8;
 
-            if frame_byte - frame_start >= 128 {
-                frame_start = (frame_byte / 128) * 128;
-                frame = frame_array.load_sub_array::<128>(frame_start);
+            if frame_byte - frame_start >= ARRAY_CHUNK_SIZE {
+                frame_start = (frame_byte / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
+                frame = frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(frame_start);
             }
 
-            let sub_frame_byte = frame_byte % 128;
+            let sub_frame_byte = frame_byte % ARRAY_CHUNK_SIZE;
             let sub_frame_bit = i % 8;
 
             if frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0 {
@@ -92,11 +91,11 @@ where
             // .unwrap();
             // serial.flush();
 
-            if bt_byte < bt_start || bt_byte - bt_start >= 128 {
-                bt_start = (bt_byte / 128) * 128;
-                bt = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
+            if bt_byte < bt_start || bt_byte - bt_start >= ARRAY_CHUNK_SIZE {
+                bt_start = (bt_byte / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
+                bt = BINARY_TREE_LEAFS.load_sub_array::<ARRAY_CHUNK_SIZE>(bt_start);
             }
-            let sub_bt_byte = bt_byte % 128;
+            let sub_bt_byte = bt_byte % ARRAY_CHUNK_SIZE;
             let sub_bt_bit = current_index % 8;
 
             if bt[sub_bt_byte] & (0b1000_0000 >> sub_bt_bit) != 0 {
@@ -368,9 +367,7 @@ fn main() -> ! {
     // display.draw_strips_from_buffer(&SKULL_FRAME01.load_sub_array::<128>(896)).unwrap();
 
     // display.setup().unwrap();
-    let mut frame_decoder = FrameDecoder::new(display);
-    frame_decoder.setup();
-    frame_decoder.decode(SKULL_FRAME02_BITS_SIZE.load(), &SKULL_FRAME02);
+    let mut huffman_frame_decoder = HuffmanFrameDecoder::new(display);
 
     for index in (0..=29).into_iter().cycle() {
         // let aa = v[index];
@@ -422,7 +419,7 @@ fn main() -> ! {
 
         // TODO: Is needed??
         // frame_decoder.setup();
-        frame_decoder.decode(frame_bits_size, frame_array);
+        huffman_frame_decoder.decode(frame_bits_size, frame_array);
         // display.draw_strips_from_buffer(&v.load_sub_array::<128>(0)).unwrap();
         // display.draw_strips_from_buffer(&v.load_sub_array::<128>(128)).unwrap();
         // display.draw_strips_from_buffer(&v.load_sub_array::<128>(256)).unwrap();
