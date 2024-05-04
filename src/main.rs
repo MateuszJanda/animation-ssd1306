@@ -1,9 +1,9 @@
 #![no_std]
 #![no_main]
 
-use animation_ssd1306::encoded_frames::*;
-use animation_ssd1306::driver_wrapper::Ssd1306DriverWrapper;
 use animation_ssd1306::driver_wrapper::MinBufferMode;
+use animation_ssd1306::driver_wrapper::Ssd1306DriverWrapper;
+use animation_ssd1306::encoded_frames::*;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 use avr_progmem::wrapper::ProgMem;
@@ -11,23 +11,22 @@ use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
 use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
 
-
 const ARRAY_CHUNK_SIZE: usize = 128;
 
-struct HuffmanFrameDecoder<'a, DI, SIZE>
+struct HuffmanFrameDecoder<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
-    display: Ssd1306DriverWrapper<'a, DI, SIZE>,
+    display: Ssd1306DriverWrapper<DI, SIZE>,
 }
 
-impl<'a, DI, SIZE> HuffmanFrameDecoder<'a, DI, SIZE>
+impl<DI, SIZE> HuffmanFrameDecoder<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
-    pub fn new(display: Ssd1306DriverWrapper<'a, DI, SIZE>) -> Self {
+    pub fn new(display: Ssd1306DriverWrapper<DI, SIZE>) -> Self {
         Self { display }
     }
 
@@ -161,7 +160,7 @@ fn main() -> ! {
         mode: embedded_hal::spi::MODE_3,
     };
 
-    // Create SPI interface.
+    // Create SPI spi_interface.
     let (spi, cs_pin) = arduino_hal::Spi::new(
         dp.SPI,
         pins.d13.into_output(),
@@ -171,17 +170,16 @@ fn main() -> ! {
         settings,
     );
 
+    ufmt::uwriteln!(&mut serial, "Init SSD1306 driver.").unwrap();
     // Init SSD1306 driver (wrapper).
     let dc_pin = pins.d7.into_output();
     let mut rst_pin = pins.d8.into_output();
     let mut delay = Delay::new();
 
-    let interface = SPIInterface::new(spi, dc_pin, cs_pin);
-    let mut print_debug = |text: &str, num: i32| -> () {};
-
-    let mode = MinBufferMode::new(&mut print_debug);
+    let spi_interface = SPIInterface::new(spi, dc_pin, cs_pin);
+    let mode = MinBufferMode::new();
     let mut display = Ssd1306DriverWrapper::new(
-        Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate180),
+        Ssd1306::new(spi_interface, DisplaySize128x64, DisplayRotation::Rotate180),
         mode,
     );
 
@@ -195,8 +193,8 @@ fn main() -> ! {
     // New wrapper method. Setup drawing area.
     display.setup().unwrap();
 
+    ufmt::uwriteln!(&mut serial, "Run animation.").unwrap();
     let mut huffman_frame_decoder = HuffmanFrameDecoder::new(display);
-
     for index in (0..=29).into_iter().cycle() {
         let (frame_bits_size, frame_array) = match index {
             0 => (SKULL_FRAME00_BITS_SIZE.load(), &SKULL_FRAME00),

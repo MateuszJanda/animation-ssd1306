@@ -20,46 +20,42 @@ use embedded_graphics_core::{
 /// Custom buffered graphics mode.
 ///
 /// MinBufferMode with array of size 1.
-pub struct MinBufferMode<'a> {
+pub struct MinBufferMode {
     /// One-byte array
     buffer: [u8; 1],
     /// Last x position of set pixel.
     last_x: u8,
     /// Last y position of set pixel.
     last_y: u8,
-    print_debug: &'a mut dyn FnMut(&str, i32) -> (),
 }
 
-impl<'a> MinBufferMode<'a> {
+impl MinBufferMode {
     /// Create a new buffered graphics mode (MinBufferMode with array of size 1) instance.
     /// Here driver read and write some temporary information.
-    pub fn new(print_debug: &'a mut dyn FnMut(&str, i32) -> ()) -> Self {
+    pub fn new() -> Self {
         Self {
             buffer: [0],
             last_x: u8::MAX,
             last_y: u8::MAX,
-
-            print_debug,
         }
     }
 }
 
 /// Wrapper (tuple struct) on Ssd1306 driver to use custom MinBufferMode.
-pub struct Ssd1306DriverWrapper<'a, DI, SIZE>(pub Ssd1306<DI, SIZE, MinBufferMode<'a>>);
+pub struct Ssd1306DriverWrapper<DI, SIZE>(pub Ssd1306<DI, SIZE, MinBufferMode>);
 
-impl<'a, DI, SIZE> Ssd1306DriverWrapper<'a, DI, SIZE>
+impl<DI, SIZE> Ssd1306DriverWrapper<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
 {
     /// Create instance of Ssd1306DriverWrapper
-    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: MinBufferMode<'a>) -> Self {
+    pub fn new(ssd: Ssd1306<DI, SIZE, BasicMode>, mode: MinBufferMode) -> Self {
         Ssd1306DriverWrapper(ssd.into_mode(mode))
     }
 
     /// Reset all data stored in mode, and clear display
     fn clear_impl(&mut self, color_value: bool) {
-        (self.mode_mut().print_debug)("Before clear", 0);
         let (width, height) = self.dimensions();
 
         // Invalidate last_x and last_y
@@ -76,8 +72,6 @@ where
         for _ in 0..num_of_bytes {
             self.interface_mut().send_data(U8(color_byte)).unwrap();
         }
-
-        (self.mode_mut().print_debug)("After clear", 0);
     }
 
     /// Turn a pixel on or off. Before sending to device, pixels are stored in one-byte buffer.
@@ -144,8 +138,6 @@ where
             return Ok(());
         }
 
-        (self.mode_mut().print_debug)("flush ", 0);
-
         let (disp_min_x, disp_min_y, disp_max_x, disp_max_y) = match self.rotation() {
             DisplayRotation::Rotate0 | DisplayRotation::Rotate180 => (
                 self.mode().last_x,
@@ -160,11 +152,6 @@ where
                 self.mode().last_y,
             ),
         };
-
-        (self.mode_mut().print_debug)("flush disp_min_x", disp_min_x as i32);
-        (self.mode_mut().print_debug)("flush disp_min_y", disp_min_y as i32);
-        (self.mode_mut().print_debug)("flush disp_max_x", disp_max_x as i32);
-        (self.mode_mut().print_debug)("flush disp_max_y", disp_max_y as i32);
 
         self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
             .unwrap();
@@ -182,7 +169,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> DrawTarget for Ssd1306DriverWrapper<'a, DI, SIZE>
+impl<DI, SIZE> DrawTarget for Ssd1306DriverWrapper<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -214,7 +201,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> OriginDimensions for Ssd1306DriverWrapper<'a, DI, SIZE>
+impl<DI, SIZE> OriginDimensions for Ssd1306DriverWrapper<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -227,7 +214,7 @@ where
     }
 }
 
-impl<'a, DI, SIZE> DisplayConfig for Ssd1306DriverWrapper<'a, DI, SIZE>
+impl<DI, SIZE> DisplayConfig for Ssd1306DriverWrapper<DI, SIZE>
 where
     DI: WriteOnlyDataCommand,
     SIZE: DisplaySize,
@@ -243,14 +230,13 @@ where
 
     /// Initialize (with AddrMode::Horizontal ad default) and clear the display in graphics mode.
     fn init(&mut self) -> Result<(), DisplayError> {
-        (self.mode_mut().print_debug)("Ssd1306DriverWrapper init", 0);
         self.clear_impl(false);
         self.init_with_addr_mode(AddrMode::Horizontal)
     }
 }
 
-impl<'a, DI, SIZE> Deref for Ssd1306DriverWrapper<'a, DI, SIZE> {
-    type Target = Ssd1306<DI, SIZE, MinBufferMode<'a>>;
+impl<DI, SIZE> Deref for Ssd1306DriverWrapper<DI, SIZE> {
+    type Target = Ssd1306<DI, SIZE, MinBufferMode>;
 
     /// Add deref to access Ssd1306DriverWrapper same way as to Ssd1306. Without "self.0" as
     /// Ssd1306DriverWrapper is tuple struct.
@@ -259,7 +245,7 @@ impl<'a, DI, SIZE> Deref for Ssd1306DriverWrapper<'a, DI, SIZE> {
     }
 }
 
-impl<'a, DI, SIZE> DerefMut for Ssd1306DriverWrapper<'a, DI, SIZE> {
+impl<DI, SIZE> DerefMut for Ssd1306DriverWrapper<DI, SIZE> {
     /// Add deref to access Ssd1306DriverWrapper same way as to Ssd1306. Without "self.0" as
     /// Ssd1306DriverWrapper is tuple struct.
     fn deref_mut(&mut self) -> &mut Self::Target {
