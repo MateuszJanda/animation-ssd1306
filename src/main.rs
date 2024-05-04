@@ -1,20 +1,152 @@
 #![no_std]
 #![no_main]
 
-use arduino_hal::spi;
-use arduino_hal::Delay;
-
-use avr_progmem::wrapper::ProgMem;
-use embedded_graphics::{
-    pixelcolor::BinaryColor,
-    prelude::*,
-};
-
+use animation_ssd1306::encoded_frames::*;
 use animation_ssd1306::non_buffered_mode::MyType;
 use animation_ssd1306::non_buffered_mode::NonBufferedMode;
-use animation_ssd1306::encoded_frames::*;
+use arduino_hal::spi;
+use arduino_hal::Delay;
+use avr_progmem::wrapper::ProgMem;
+use embedded_graphics::{pixelcolor::BinaryColor, prelude::*};
 use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
+
+struct FrameDecoder<'a, DI, SIZE>
+where
+    DI: WriteOnlyDataCommand,
+    SIZE: DisplaySize,
+{
+    display: MyType<'a, DI, SIZE>,
+}
+
+impl<'a, DI, SIZE> FrameDecoder<'a, DI, SIZE>
+where
+    DI: WriteOnlyDataCommand,
+    SIZE: DisplaySize,
+{
+    pub fn new(display: MyType<'a, DI, SIZE>) -> Self {
+        Self { display }
+    }
+
+    pub fn setup(&mut self) {
+        self.display.setup().unwrap();
+    }
+
+    pub fn decode(&mut self, frame_bits_size: usize, frame_array: &ProgMem<[u8; 384]>) {
+        // let frame_bits_size = SKULL_FRAME02_BITS_SIZE.load();
+        // let x = BINARY_TREE_LEAFS.load_sub_array::<128>(0);
+        let mut bt_start = 0;
+        let mut bt: [u8; 128] = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
+
+        let mut frame_start = 0;
+        let mut frame: [u8; 128] = frame_array.load_sub_array::<128>(frame_start);
+        let mut current_index = 1;
+        let mut current_code = 0;
+
+        // let mut value_start = 0;
+        // let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
+
+        let mut buf = [0; 128];
+        let mut buf_i = 0;
+        for i in 0..frame_bits_size {
+            // ufmt::uwriteln!(&mut serial, "BUKA i: {}, buf_i: {}, current_index: {}", i, buf_i, current_index).unwrap();
+
+            let frame_byte = i / 8;
+            // let frame_bit = i % 8;
+
+            if frame_byte - frame_start >= 128 {
+                frame_start = (frame_byte / 128) * 128;
+                frame = frame_array.load_sub_array::<128>(frame_start);
+            }
+
+            let sub_frame_byte = frame_byte % 128;
+            let sub_frame_bit = i % 8;
+
+            if frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0 {
+                current_index = 2 * current_index + 1;
+                current_code = current_code << 1 | 1;
+            } else {
+                current_index = 2 * current_index;
+                current_code = current_code << 1;
+            }
+            // ufmt::uwriteln!(&mut serial, "BUKA current_index {}", current_index).unwrap();
+            // ufmt::uwriteln!(
+            //     &mut serial,
+            //     "BUKA i: {}, buf_i: {}, current_index: {}, current_code: {}, bit: {}",
+            //     i,
+            //     buf_i,
+            //     current_index,
+            //     current_code,
+            //     frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0
+            // )
+            // .unwrap();
+
+            let bt_byte = current_index / 8;
+
+            // ufmt::uwriteln!(
+            //     &mut serial,
+            //     "BUKA b bt_byte:{} bt_start:{}",
+            //     bt_byte,
+            //     bt_start
+            // )
+            // .unwrap();
+            // serial.flush();
+
+            if bt_byte < bt_start || bt_byte - bt_start >= 128 {
+                bt_start = (bt_byte / 128) * 128;
+                bt = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
+            }
+            let sub_bt_byte = bt_byte % 128;
+            let sub_bt_bit = current_index % 8;
+
+            if bt[sub_bt_byte] & (0b1000_0000 >> sub_bt_bit) != 0 {
+                // is leaf
+
+                let mut lo: usize = 0;
+                let mut hi: usize = BINARY_TREE_CODES.len() - 1;
+                let mut mi: usize = (hi - lo) / 2 + lo;
+
+                // let search_code = current_index - 2;
+                // let search_code = current_code;
+                // ufmt::uwriteln!(&mut serial, "BUKA current_code 0x{:04x}", current_code).unwrap();
+                while lo <= hi {
+                    mi = (hi - lo) / 2 + lo;
+                    // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
+
+                    if current_code == BINARY_TREE_CODES[mi] as usize {
+                        // ufmt::uwriteln!(&mut serial, "BUKA break mi: {}", mi).unwrap();
+                        break;
+                    } else if current_code < BINARY_TREE_CODES[mi] as usize {
+                        hi = mi - 1;
+                    } else {
+                        lo = mi + 1;
+                    }
+                }
+                // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
+
+                // let mut mi_byte: usize = mi;
+                // if mi_byte < value_start || mi_byte - value_start >= 128 {
+                //     value_start = (mi_byte / 128) * 128;
+                //     value = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
+                //     mi_byte = mi_byte % 128;
+                // }
+
+                buf[buf_i] = BINARY_TREE_VALUES[mi];
+                // ufmt::uwriteln!(&mut serial, "BUKA mi {}, value 0x{:x} ", mi, buf[buf_i]).unwrap();
+                current_index = 1;
+                current_code = 0;
+
+                // let mi_byte =BINARY_TREE_INDEXES_TO_VALUES
+
+                buf_i += 1;
+                if buf_i == buf.len() {
+                    self.display.draw_strips_from_buffer(&buf).unwrap();
+                    buf_i = 0;
+                }
+            }
+        }
+    }
+}
 
 #[arduino_hal::entry]
 fn main() -> ! {
@@ -469,143 +601,6 @@ fn main() -> ! {
     loop {
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
         arduino_hal::delay_ms(500);
-    }
-}
-
-struct FrameDecoder<'a, DI, SIZE>
-where
-    DI: WriteOnlyDataCommand,
-    SIZE: DisplaySize,
-{
-    display: MyType<'a, DI, SIZE>,
-}
-
-impl<'a, DI, SIZE> FrameDecoder<'a, DI, SIZE>
-where
-    DI: WriteOnlyDataCommand,
-    SIZE: DisplaySize,
-{
-    pub fn new(display: MyType<'a, DI, SIZE>) -> Self {
-        Self { display }
-    }
-
-    pub fn setup(&mut self) {
-        self.display.setup().unwrap();
-    }
-
-    pub fn decode(&mut self, frame_bits_size: usize, frame_array: &ProgMem<[u8; 384]>) {
-        // let frame_bits_size = SKULL_FRAME02_BITS_SIZE.load();
-        // let x = BINARY_TREE_LEAFS.load_sub_array::<128>(0);
-        let mut bt_start = 0;
-        let mut bt: [u8; 128] = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
-
-        let mut frame_start = 0;
-        let mut frame: [u8; 128] = frame_array.load_sub_array::<128>(frame_start);
-        let mut current_index = 1;
-        let mut current_code = 0;
-
-        // let mut value_start = 0;
-        // let mut value: [u8; 128] = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
-
-        let mut buf = [0; 128];
-        let mut buf_i = 0;
-        for i in 0..frame_bits_size {
-            // ufmt::uwriteln!(&mut serial, "BUKA i: {}, buf_i: {}, current_index: {}", i, buf_i, current_index).unwrap();
-
-            let frame_byte = i / 8;
-            // let frame_bit = i % 8;
-
-            if frame_byte - frame_start >= 128 {
-                frame_start = (frame_byte / 128) * 128;
-                frame = frame_array.load_sub_array::<128>(frame_start);
-            }
-
-            let sub_frame_byte = frame_byte % 128;
-            let sub_frame_bit = i % 8;
-
-            if frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0 {
-                current_index = 2 * current_index + 1;
-                current_code = current_code << 1 | 1;
-            } else {
-                current_index = 2 * current_index;
-                current_code = current_code << 1;
-            }
-            // ufmt::uwriteln!(&mut serial, "BUKA current_index {}", current_index).unwrap();
-            // ufmt::uwriteln!(
-            //     &mut serial,
-            //     "BUKA i: {}, buf_i: {}, current_index: {}, current_code: {}, bit: {}",
-            //     i,
-            //     buf_i,
-            //     current_index,
-            //     current_code,
-            //     frame[sub_frame_byte] & (0b1000_0000 >> sub_frame_bit) != 0
-            // )
-            // .unwrap();
-
-            let bt_byte = current_index / 8;
-
-            // ufmt::uwriteln!(
-            //     &mut serial,
-            //     "BUKA b bt_byte:{} bt_start:{}",
-            //     bt_byte,
-            //     bt_start
-            // )
-            // .unwrap();
-            // serial.flush();
-
-            if bt_byte < bt_start || bt_byte - bt_start >= 128 {
-                bt_start = (bt_byte / 128) * 128;
-                bt = BINARY_TREE_LEAFS.load_sub_array::<128>(bt_start);
-            }
-            let sub_bt_byte = bt_byte % 128;
-            let sub_bt_bit = current_index % 8;
-
-            if bt[sub_bt_byte] & (0b1000_0000 >> sub_bt_bit) != 0 {
-                // is leaf
-
-                let mut lo: usize = 0;
-                let mut hi: usize = BINARY_TREE_CODES.len() - 1;
-                let mut mi: usize = (hi - lo) / 2 + lo;
-
-                // let search_code = current_index - 2;
-                // let search_code = current_code;
-                // ufmt::uwriteln!(&mut serial, "BUKA current_code 0x{:04x}", current_code).unwrap();
-                while lo <= hi {
-                    mi = (hi - lo) / 2 + lo;
-                    // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
-
-                    if current_code == BINARY_TREE_CODES[mi] as usize {
-                        // ufmt::uwriteln!(&mut serial, "BUKA break mi: {}", mi).unwrap();
-                        break;
-                    } else if current_code < BINARY_TREE_CODES[mi] as usize {
-                        hi = mi - 1;
-                    } else {
-                        lo = mi + 1;
-                    }
-                }
-                // ufmt::uwriteln!(&mut serial, "BUKA  mi: {}", mi).unwrap();
-
-                // let mut mi_byte: usize = mi;
-                // if mi_byte < value_start || mi_byte - value_start >= 128 {
-                //     value_start = (mi_byte / 128) * 128;
-                //     value = BINARY_TREE_INDEXES_TO_VALUES.load_sub_array::<128>(value_start);
-                //     mi_byte = mi_byte % 128;
-                // }
-
-                buf[buf_i] = BINARY_TREE_VALUES[mi];
-                // ufmt::uwriteln!(&mut serial, "BUKA mi {}, value 0x{:x} ", mi, buf[buf_i]).unwrap();
-                current_index = 1;
-                current_code = 0;
-
-                // let mi_byte =BINARY_TREE_INDEXES_TO_VALUES
-
-                buf_i += 1;
-                if buf_i == buf.len() {
-                    self.display.draw_strips_from_buffer(&buf).unwrap();
-                    buf_i = 0;
-                }
-            }
-        }
     }
 }
 
