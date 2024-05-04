@@ -247,6 +247,67 @@ fn main() -> ! {
     frame_decoder.setup();
     frame_decoder.decode(SKULL_FRAME02_BITS_SIZE.load(), &SKULL_FRAME02);
 
+    for index in (0..=29).into_iter().cycle() {
+        // let aa = v[index];
+
+        // match index {
+        //         0 => display.draw_strips_from_buffer(&SKULL_FRAME00).unwrap(),
+        //         1 => display.draw_strips_from_buffer(&SKULL_FRAME01).unwrap(),
+        //         _ => (),
+        // };
+
+        let (frame_bits_size, frame_array) = match index {
+            0 => (SKULL_FRAME00_BITS_SIZE.load(), &SKULL_FRAME00),
+            1 => (SKULL_FRAME01_BITS_SIZE.load(), &SKULL_FRAME01),
+            2 => (SKULL_FRAME02_BITS_SIZE.load(), &SKULL_FRAME02),
+            3 => (SKULL_FRAME03_BITS_SIZE.load(), &SKULL_FRAME03),
+            4 => (SKULL_FRAME04_BITS_SIZE.load(), &SKULL_FRAME04),
+            5 => (SKULL_FRAME05_BITS_SIZE.load(), &SKULL_FRAME05),
+            6 => (SKULL_FRAME06_BITS_SIZE.load(), &SKULL_FRAME06),
+            7 => (SKULL_FRAME07_BITS_SIZE.load(), &SKULL_FRAME07),
+            8 => (SKULL_FRAME08_BITS_SIZE.load(), &SKULL_FRAME08),
+            9 => (SKULL_FRAME09_BITS_SIZE.load(), &SKULL_FRAME09),
+
+            10 => (SKULL_FRAME10_BITS_SIZE.load(), &SKULL_FRAME10),
+            11 => (SKULL_FRAME11_BITS_SIZE.load(), &SKULL_FRAME11),
+            12 => (SKULL_FRAME12_BITS_SIZE.load(), &SKULL_FRAME12),
+            13 => (SKULL_FRAME13_BITS_SIZE.load(), &SKULL_FRAME13),
+            14 => (SKULL_FRAME14_BITS_SIZE.load(), &SKULL_FRAME14),
+            15 => (SKULL_FRAME15_BITS_SIZE.load(), &SKULL_FRAME15),
+            16 => (SKULL_FRAME16_BITS_SIZE.load(), &SKULL_FRAME16),
+            17 => (SKULL_FRAME17_BITS_SIZE.load(), &SKULL_FRAME17),
+            18 => (SKULL_FRAME18_BITS_SIZE.load(), &SKULL_FRAME18),
+            19 => (SKULL_FRAME19_BITS_SIZE.load(), &SKULL_FRAME19),
+
+            20 => (SKULL_FRAME20_BITS_SIZE.load(), &SKULL_FRAME20),
+            21 => (SKULL_FRAME21_BITS_SIZE.load(), &SKULL_FRAME21),
+            22 => (SKULL_FRAME22_BITS_SIZE.load(), &SKULL_FRAME22),
+            23 => (SKULL_FRAME23_BITS_SIZE.load(), &SKULL_FRAME23),
+            24 => (SKULL_FRAME24_BITS_SIZE.load(), &SKULL_FRAME24),
+            25 => (SKULL_FRAME25_BITS_SIZE.load(), &SKULL_FRAME25),
+            26 => (SKULL_FRAME26_BITS_SIZE.load(), &SKULL_FRAME26),
+            27 => (SKULL_FRAME27_BITS_SIZE.load(), &SKULL_FRAME27),
+            28 => (SKULL_FRAME28_BITS_SIZE.load(), &SKULL_FRAME28),
+            29 => (SKULL_FRAME29_BITS_SIZE.load(), &SKULL_FRAME29),
+
+            _ => (SKULL_FRAME00_BITS_SIZE.load(), &SKULL_FRAME00),
+        };
+
+        // display.setup().unwrap();
+        frame_decoder.setup();
+        frame_decoder.decode(frame_bits_size, frame_array);
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(0)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(128)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(256)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(384)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(512)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(640)).unwrap();
+        // display.draw_strips_from_buffer(&v.load_sub_array::<128>(896)).unwrap();
+
+        // ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
+        arduino_hal::delay_ms(1);
+    }
+
     // --- BUKA1 start
 
     // display.draw_strips_from_buffer(&SKULL_FRAME02.load_sub_array::<128>(0)).unwrap();
