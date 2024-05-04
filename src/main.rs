@@ -1,26 +1,19 @@
 #![no_std]
 #![no_main]
 
-// use animation_ssd1306::raw_image::DATA;
-use animation_ssd1306::raw_image::*;
-// use animation_ssd1306::raw_image::SKULL_FRAME01;
 use arduino_hal::spi;
 use arduino_hal::Delay;
 
 use avr_progmem::wrapper::ProgMem;
 use embedded_graphics::{
-    image::{Image, ImageRaw},
     pixelcolor::BinaryColor,
     prelude::*,
-    primitives::{PrimitiveStyleBuilder, Rectangle},
 };
 
 use animation_ssd1306::non_buffered_mode::MyType;
 use animation_ssd1306::non_buffered_mode::NonBufferedMode;
-use animation_ssd1306::raw_image::*;
-use animation_ssd1306::*;
+use animation_ssd1306::encoded_frames::*;
 use panic_halt as _;
-use ssd1306::mode::BasicMode;
 use ssd1306::{prelude::*, Ssd1306};
 
 #[arduino_hal::entry]
