@@ -12,6 +12,7 @@ use panic_halt as _;
 use ssd1306::{prelude::*, Ssd1306};
 
 const ARRAY_CHUNK_SIZE: usize = 128;
+const BUFFER_SIZE: usize = 1;
 
 /// Huffman code decoder.
 struct HuffmanFrameDecoder<DI, SIZE>
@@ -23,7 +24,7 @@ where
     frame_chunk: [u8; ARRAY_CHUNK_SIZE],
     bt_chunk_start: usize,
     bt_chunk: [u8; ARRAY_CHUNK_SIZE],
-    buffer: [u8; ARRAY_CHUNK_SIZE],
+    buffer: [u8; BUFFER_SIZE],
     buffer_byte_count: usize,
     frame_bit_index: usize,
     huffman_code: usize,
@@ -42,7 +43,7 @@ where
             frame_chunk: [0; ARRAY_CHUNK_SIZE],
             bt_chunk_start: 0,
             bt_chunk: [0; ARRAY_CHUNK_SIZE],
-            buffer: [0; ARRAY_CHUNK_SIZE],
+            buffer: [0; BUFFER_SIZE],
             buffer_byte_count: 0,
             frame_bit_index: 1,
             huffman_code: 0,
@@ -61,7 +62,7 @@ where
         self.frame_bit_index = 1;
         self.huffman_code = 0;
 
-        self.buffer = [0; ARRAY_CHUNK_SIZE];
+        self.buffer = [0; BUFFER_SIZE];
         self.buffer_byte_count = 0;
 
         for i in 0..frame_bits_size {
@@ -146,6 +147,7 @@ where
         self.bt_chunk[bt_chunk_byte_index] & (0b1000_0000 >> bt_chunk_bit_index) != 0
     }
 
+    /// Binary search to find huffman code in BINARY_TREE_CODES array.
     fn search_huffman_code(&self, huffman_code: usize) -> usize {
         let mut lo: usize = 0;
         let mut hi: usize = BINARY_TREE_CODES.len() - 1;
