@@ -127,7 +127,7 @@ where
         self.set_draw_area((0, 0), (width, height))
     }
 
-    /// New wrapper method. Pass buffer directly to device (by SPI interface).
+    /// New wrapper method. Pass buffer (8-bit long vertical strips) directly to device (by SPI interface).
     pub fn draw_strips_from_buffer(&mut self, buffer: &[u8]) -> Result<(), DisplayError> {
         self.interface_mut().send_data(U8(buffer))
     }
