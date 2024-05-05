@@ -88,7 +88,7 @@ where
     ) -> (usize, usize) {
         let frame_byte_index = bit_index / 8;
         // If frame byte is not in current chunk, read proper one.
-        if frame_byte_index - self.frame_chunk_start >= ARRAY_CHUNK_SIZE {
+        if frame_byte_index - self.frame_chunk_start >= self.frame_chunk.len() {
             self.frame_chunk_start = (frame_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
             self.frame_chunk =
                 frame_array.load_sub_array::<ARRAY_CHUNK_SIZE>(self.frame_chunk_start);
@@ -104,7 +104,7 @@ where
     fn load_bt_chunk(&mut self) -> (usize, usize) {
         let bt_byte_index = self.frame_bit_index / 8;
         if bt_byte_index < self.bt_chunk_start
-            || bt_byte_index - self.bt_chunk_start >= ARRAY_CHUNK_SIZE
+            || bt_byte_index - self.bt_chunk_start >= self.bt_chunk.len()
         {
             self.bt_chunk_start = (bt_byte_index / ARRAY_CHUNK_SIZE) * ARRAY_CHUNK_SIZE;
             self.bt_chunk =
