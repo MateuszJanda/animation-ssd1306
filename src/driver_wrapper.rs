@@ -55,27 +55,26 @@ where
     }
 
     /// Reset all data stored in mode, and clear display
-    fn clear_impl(&mut self, color_value: bool) {
-        let (width, height) = self.dimensions();
-
+    fn clear_impl(&mut self, pixels_on: bool) {
         // Invalidate last_x and last_y
         self.mode_mut().last_x = u8::MAX;
         self.mode_mut().last_y = u8::MAX;
 
         // Clear display
+        let (width, height) = self.dimensions();
         self.set_draw_area((0, 0), (width, height)).unwrap();
-        let color_byte = match color_value {
+        let pixels_strip = match pixels_on {
             true => &[0xff],
             false => &[0x00],
         };
         let num_of_bytes = (width as u32 * height as u32) / 8;
         for _ in 0..num_of_bytes {
-            self.interface_mut().send_data(U8(color_byte)).unwrap();
+            self.interface_mut().send_data(U8(pixels_strip)).unwrap();
         }
     }
 
     /// Turn a pixel on or off. Before sending to device, pixels are stored in one-byte buffer.
-    pub fn set_pixel(&mut self, x: u32, y: u32, value: bool) {
+    pub fn set_pixel(&mut self, x: u32, y: u32, pixel_on: bool) {
         // If given pixel is not covered by buffer, flush buffer with currently collected pixels.
         if self.is_pixel_out_of_buffer(x as u8, y as u8) {
             self.flush().unwrap();
@@ -94,9 +93,9 @@ where
         };
 
         // Save pixel in one-byte buffer
-        let value = value as u8;
+        let pixel_on = pixel_on as u8;
         self.mode_mut().buffer[0] =
-            self.mode_mut().buffer[0] & !(1 << bit_num) | (value << bit_num);
+            self.mode_mut().buffer[0] & !(1 << bit_num) | (pixel_on << bit_num);
 
         // Save current pixel position as last modified
         self.mode_mut().last_x = x as u8;
@@ -155,8 +154,8 @@ where
 
         self.set_draw_area((disp_min_x, disp_min_y), (disp_max_x, disp_max_y))
             .unwrap();
-        let byte_buffer = self.mode().buffer;
-        self.interface_mut().send_data(U8(&byte_buffer)).unwrap();
+        let buffer_copy = self.mode().buffer;
+        self.interface_mut().send_data(U8(&buffer_copy)).unwrap();
 
         // Empty byte buffer
         self.mode_mut().buffer[0] = 0x00;
