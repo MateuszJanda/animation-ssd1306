@@ -21,7 +21,9 @@ embedded-graphics-core = "0.4.0"
 avr-progmem = "0.4.0"
 
 [dependencies.ssd1306]
-path = "../ssd1306"
+# path = "../ssd1306"
+git = "https://github.com/MateuszJanda/ssd1306"
+rev = "18a628f0c8b852e3d88b8634e2f2344468a10f3e"
 
 [dependencies.arduino-hal]
 git = "https://github.com/rahix/avr-hal"
