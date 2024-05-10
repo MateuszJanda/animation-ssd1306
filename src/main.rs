@@ -171,7 +171,7 @@ where
             }
         }
 
-        // Should be unreachable, as value always should be found
+        // Unreachable, as value always should be found
         0
     }
 
@@ -280,7 +280,7 @@ fn main() -> ! {
         arduino_hal::delay_ms(1);
     }
 
-    // Should be unreachable huffman_code if application work correct.
+    // Unreachable if application work correct.
     loop {
         ufmt::uwriteln!(&mut serial, "Ping.").unwrap();
         arduino_hal::delay_ms(500);
