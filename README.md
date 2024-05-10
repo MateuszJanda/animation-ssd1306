@@ -1,5 +1,9 @@
 # About
 
+<p align="center">
+<img src="./gallery/demo.gif"/>
+</p>
+
 Simple skull animation on Arduino Uno R3 and [WaveShare 0.96inch OLED (B)](https://www.waveshare.com/wiki/0.96inch_OLED_%28B%29#User_Guides_for_Arduino) display.
 Frames are compressed and decompress by [Huffman algorithm](https://en.wikipedia.org/wiki/Huffman_coding) to fit into 32 KB flash memory.
 Project uses two great libraries: [avr-hal](https://github.com/Rahix/avr-hal) and [modified](https://github.com/MateuszJanda/ssd1306) [ssd1306 driver](https://github.com/jamwaffles/ssd1306) to bypass buffering (and save memory).
